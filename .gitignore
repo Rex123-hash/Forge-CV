@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Secrets / env
+.env
+*.local
+.claude/settings.local.json
+
+# Brainstorm visual-companion artifacts
+.superpowers/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Build / output artifacts
+*.pdf
+*.docx
+!docs/**/*.pdf
+dist/
+build/
