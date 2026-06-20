@@ -32,3 +32,5 @@ input,textarea,select{width:100%;border:1px solid #ddd6c5;border-radius:10px;
 .tabs{display:flex;gap:26px;border-bottom:1px solid var(--border);margin:6px 4px 0;}
 .tab{padding:12px 2px;font-weight:800;color:var(--muted);cursor:pointer;}
 .tab.on{color:var(--ink);border-bottom:3px solid var(--accent);}
+.banner{background:var(--accent-soft);color:var(--accent-dark);border:1px solid #f0c9c3;
+  border-radius:12px;padding:14px 16px;margin-bottom:16px;font-weight:700;font-size:14px;}

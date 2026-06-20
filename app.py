@@ -35,7 +35,17 @@ def create_app():
         jd = request.form.get("job_description", "")
         job = JobSpec(raw=jd, target_keywords=extract_keywords(jd))
 
-        resume, report = generator.generate(resume, job)
+        try:
+            resume, report = generator.generate(resume, job)
+        except Exception:
+            # The only network dependency is Groq; a missing/invalid key or an
+            # outage lands here. Show a friendly message instead of a 500.
+            return render_template(
+                "index.html",
+                error="Could not reach the AI service. Set GROQ_API_KEY to a "
+                      "valid key from console.groq.com and try again.",
+            ), 502
+
         try:
             cover = groq_client.write_cover_letter(resume, jd) if jd else ""
         except Exception:

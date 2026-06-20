@@ -6,6 +6,8 @@
 </div>
 <h1 class="headline">Build a resume that <span>beats the bots</span> and lands the interview.</h1>
 
+{% if error %}<div class="banner">{{ error }}</div>{% endif %}
+
 <form class="card" method="post" action="/generate" enctype="multipart/form-data">
   <label>Upload your existing resume (optional, PDF or DOCX)</label>
   <input type="file" name="resume_file" accept=".pdf,.docx">
