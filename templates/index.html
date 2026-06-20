@@ -1,10 +1,21 @@
-<!doctype html><html><head><meta charset="utf-8"><title>ForgeCV</title></head>
-<body>
-<h1>ForgeCV</h1>
-<form method="post" action="/generate" enctype="multipart/form-data">
-  <input name="name"><input name="email"><input name="phone">
-  <input name="skills"><textarea name="experience"></textarea>
-  <textarea name="job_description"></textarea>
-  <button type="submit">Generate</button>
+{% extends "base.html" %}
+{% block content %}
+<div class="brandbar">
+  <div class="logo"><img src="{{ url_for('static', filename='img/logo.svg') }}" alt="ForgeCV"> ForgeCV</div>
+  <span class="pill">ATS-Optimized · AI</span>
+</div>
+<h1 class="headline">Build a resume that <span>beats the bots</span> and lands the interview.</h1>
+
+<form class="card" method="post" action="/generate" enctype="multipart/form-data">
+  <label>Upload your existing resume (optional, PDF or DOCX)</label>
+  <input type="file" name="resume_file" accept=".pdf,.docx">
+  <label>Full name</label><input name="name" placeholder="Aman Kumar">
+  <label>Email</label><input name="email" type="email" placeholder="you@example.com">
+  <label>Phone</label><input name="phone" placeholder="+91 ...">
+  <label>Skills (comma separated)</label><input name="skills" placeholder="Python, Flask, Docker">
+  <label>Experience</label><textarea name="experience" rows="4" placeholder="What you did..."></textarea>
+  <label>Target job description</label>
+  <textarea name="job_description" rows="5" placeholder="Paste the job posting to tailor and score against it"></textarea>
+  <div style="margin-top:16px"><button class="btn" type="submit">Generate &amp; score</button></div>
 </form>
-</body></html>
+{% endblock %}
