@@ -1,0 +1,9 @@
+<!doctype html><html><head><meta charset="utf-8"><title>ForgeCV - Result</title></head>
+<body>
+<h1>ForgeCV</h1>
+<p>Overall ATS score: {{ combined }}</p>
+<p>Parse: {{ report.parse_score }} | Match: {{ report.match_score }}</p>
+{% if report.missing_keywords %}<p>Missing: {{ report.missing_keywords | join(", ") }}</p>{% endif %}
+<a href="/download/pdf">PDF</a> <a href="/download/docx">DOCX</a>
+{% if cover %}<pre>{{ cover }}</pre>{% endif %}
+</body></html>
