@@ -32,11 +32,54 @@ def parse_text_to_resume(text: str) -> ResumeData:
     if ph:
         r.phone = ph.group(1).strip()
 
-    # crude section split for SKILLS
-    upper = text.upper()
-    if "SKILLS" in upper:
-        after = text[upper.index("SKILLS") + len("SKILLS"):]
-        first_block = after.split("\n\n")[0]
-        raw = re.split(r"[,\n]", first_block)
-        r.skills = [s.strip() for s in raw if 1 < len(s.strip()) < 30][:15]
+    r.skills = _extract_skills(text)
     return r
+
+
+# Headings that mark the end of the SKILLS block.
+SECTION_HEADERS = {
+    "EXPERIENCE", "EDUCATION", "PROJECTS", "SUMMARY", "WORK", "CONTACT",
+    "CERTIFICATIONS", "ACHIEVEMENTS", "AWARDS", "INTERESTS", "OBJECTIVE",
+    "PROFILE", "LANGUAGES", "REFERENCES",
+}
+
+
+def _is_section_header(line: str) -> bool:
+    alpha = "".join(ch for ch in line if ch.isalpha() or ch.isspace()).strip()
+    return alpha.upper() in SECTION_HEADERS
+
+
+def _extract_skills(text: str) -> list[str]:
+    """Collect skill items listed after a SKILLS heading, stopping at the
+    next section header so we don't swallow EXPERIENCE/EDUCATION content."""
+    lines = text.splitlines()
+    start = None
+    # Prefer a line that is exactly the SKILLS heading.
+    for i, ln in enumerate(lines):
+        if ln.strip().upper() == "SKILLS":
+            start = i + 1
+            break
+    # Fall back to the first line that mentions SKILLS inline.
+    if start is None:
+        for i, ln in enumerate(lines):
+            if "SKILLS" in ln.upper():
+                start = i + 1
+                break
+    if start is None:
+        return []
+
+    collected = []
+    for ln in lines[start:]:
+        if not ln.strip():
+            continue
+        if _is_section_header(ln):
+            break
+        collected.append(ln)
+
+    raw = re.split(r"[,\n]", "\n".join(collected))
+    skills = []
+    for item in raw:
+        item = item.lstrip("-•* ").strip()
+        if 1 < len(item) < 30 and not _is_section_header(item):
+            skills.append(item)
+    return skills[:15]
