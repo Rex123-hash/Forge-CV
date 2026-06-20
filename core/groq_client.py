@@ -1,4 +1,5 @@
 import re
+import json
 import config
 
 _client = None
@@ -53,6 +54,41 @@ def rewrite_bullets(bullets: list[str], keywords: list[str]) -> list[str]:
     )
     out = _chat(prompt)
     return [ln.lstrip("-• ").strip() for ln in out.splitlines() if ln.strip()]
+
+
+def parse_resume(raw_text: str) -> dict:
+    """Use the LLM to turn raw resume text into structured fields.
+
+    Returns a dict with keys: name, email, phone, links, summary, skills,
+    experiences (list of {title, company, start, end, bullets}), educations
+    (list of {degree, institution, year}). Returns {} on failure so the caller
+    can fall back to the regex parser.
+    """
+    if not raw_text.strip():
+        return {}
+    prompt = (
+        "Extract structured data from this resume. Return STRICT JSON with keys: "
+        "name (string), email (string), phone (string), links (list of strings), "
+        "summary (string), skills (list of strings), experiences (list of objects "
+        "with title, company, start, end, bullets[list of strings]), educations "
+        "(list of objects with degree, institution, year). Use empty string/list "
+        "when a field is absent. Do NOT invent anything. name must be the person's "
+        "name only, never their contact line.\n\nRESUME:\n" + raw_text[:7000]
+    )
+    try:
+        resp = _get_client().chat.completions.create(
+            model=config.GROQ_MODEL,
+            messages=[
+                {"role": "system", "content": "You extract resume data as strict "
+                 "JSON. Output only JSON, no prose, no emojis."},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.1,
+            response_format={"type": "json_object"},
+        )
+        return json.loads(_strip(resp.choices[0].message.content))
+    except Exception:
+        return {}
 
 
 def write_cover_letter(resume, job_description: str) -> str:

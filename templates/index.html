@@ -1,23 +1,46 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="brandbar">
-  <div class="logo"><img src="{{ url_for('static', filename='img/logo.svg') }}" alt="ForgeCV"> ForgeCV</div>
-  <span class="pill">ATS-Optimized · AI</span>
+<div class="hero">
+  <h1 class="headline">Build a resume that <span>beats the bots</span> and lands the interview.</h1>
+  <p class="subhead">Upload your resume or fill in your details. We rewrite it, score it against the job, and export a clean ATS-ready PDF and DOCX.</p>
 </div>
-<h1 class="headline">Build a resume that <span>beats the bots</span> and lands the interview.</h1>
 
 {% if error %}<div class="banner">{{ error }}</div>{% endif %}
 
-<form class="card" method="post" action="/generate" enctype="multipart/form-data">
-  <label>Upload your existing resume (optional, PDF or DOCX)</label>
-  <input type="file" name="resume_file" accept=".pdf,.docx">
-  <label>Full name</label><input name="name" placeholder="Aman Kumar">
-  <label>Email</label><input name="email" type="email" placeholder="you@example.com">
-  <label>Phone</label><input name="phone" placeholder="+91 ...">
-  <label>Skills (comma separated)</label><input name="skills" placeholder="Python, Flask, Docker">
-  <label>Experience</label><textarea name="experience" rows="4" placeholder="What you did..."></textarea>
-  <label>Target job description</label>
-  <textarea name="job_description" rows="5" placeholder="Paste the job posting to tailor and score against it"></textarea>
-  <div style="margin-top:16px"><button class="btn" type="submit">Generate &amp; score</button></div>
+<form class="card" method="post" action="/generate" enctype="multipart/form-data" id="forge-form">
+  <label>Start from your existing resume</label>
+  <div class="drop" id="drop">
+    <input type="file" name="resume_file" id="resume_file" accept=".pdf,.docx">
+    <div class="ico">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 16V4M7 9l5-5 5 5"/><path d="M5 20h14"/>
+      </svg>
+    </div>
+    <div class="t">Drop your resume here, or click to browse</div>
+    <div class="s">PDF or DOCX · we read it with AI and pre-fill everything</div>
+    <div class="fname" id="fname"></div>
+  </div>
+
+  <div class="or">or enter manually</div>
+
+  <div class="row">
+    <div class="field"><label>Full name</label><input name="name" placeholder="Amaan Khan"></div>
+    <div class="field"><label>Email</label><input name="email" type="email" placeholder="you@example.com"></div>
+  </div>
+  <div class="row">
+    <div class="field"><label>Phone</label><input name="phone" placeholder="+91 ..."></div>
+    <div class="field"><label>Skills (comma separated)</label><input name="skills" placeholder="Python, Flask, Docker"></div>
+  </div>
+  <div class="field"><label>Experience</label>
+    <textarea name="experience" rows="4" placeholder="What you did — roles, projects, impact..."></textarea></div>
+  <div class="field"><label>Target job description</label>
+    <textarea name="job_description" rows="5" placeholder="Paste the job posting. We tailor and score against it."></textarea></div>
+
+  <button class="btn block" type="submit" id="submit-btn">Generate &amp; score my resume</button>
+  <div class="note">
+    <span>Your details are processed only to build your resume and are not stored after the page closes.</span>
+  </div>
 </form>
+
+<p class="foot">ForgeCV · built by Amaan Khan</p>
 {% endblock %}

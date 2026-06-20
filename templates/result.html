@@ -1,28 +1,60 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="brandbar">
-  <div class="logo"><img src="{{ url_for('static', filename='img/logo.svg') }}" alt="ForgeCV"> ForgeCV</div>
-  <span class="pill">Result</span>
+<div class="hero">
+  <h1 class="headline">Your resume scored <span>{{ combined }}</span></h1>
+  <p class="subhead">{% if combined >= 99 %}Excellent — this is ATS-ready.{% elif combined >= 85 %}Strong. A few tweaks below can push it higher.{% else %}Good start — see what to improve below.{% endif %}</p>
 </div>
-<h1 class="headline">Your ATS score: <span>{{ combined }}</span></h1>
 
 <div class="card">
-  <div class="stats">
-    <div class="stat"><div class="num">{{ combined }}</div><div class="lbl">Overall ATS score</div></div>
-    <div class="stat"><div class="num">{{ report.parse_score }}</div><div class="lbl">Parse-ability</div></div>
-    <div class="stat"><div class="num">{{ report.match_score }}</div><div class="lbl">Job-match</div></div>
+  <div class="gauges">
+    <div class="gauge" style="--val:{{ combined }}"><div class="gauge-in"><span class="gauge-num">{{ combined }}</span><span class="gauge-lbl">Overall</span></div></div>
+    <div class="gauge soft" style="--val:{{ report.parse_score }}"><div class="gauge-in"><span class="gauge-num">{{ report.parse_score }}</span><span class="gauge-lbl">Parse-ability</span></div></div>
+    <div class="gauge soft" style="--val:{{ report.match_score }}"><div class="gauge-in"><span class="gauge-num">{{ report.match_score }}</span><span class="gauge-lbl">Job-match</span></div></div>
   </div>
   {% if report.missing_keywords %}
-  <p style="color:var(--muted);margin-top:14px">Still missing: {{ report.missing_keywords | join(", ") }}</p>
+  <div class="note"><span><strong>To score higher, add these keywords (only if true):</strong></span></div>
+  <div class="chips">{% for k in report.missing_keywords %}<span class="chip">{{ k }}</span>{% endfor %}</div>
+  {% endif %}
+  {% if report.parse_score < 100 %}
+  <div class="note"><span><strong>Parse-ability tip:</strong> include all standard sections (contact, education, experience, skills) so an ATS reads it cleanly.</span></div>
   {% endif %}
 </div>
 
 <div class="card">
-  <a class="btn" href="/download/pdf">Download PDF</a>
-  <a class="btn ghost" href="/download/docx">Download DOCX</a>
+  <h2>Download your resume</h2>
+  <p class="hint">Both formats have a real text layer — ATS-safe.</p>
+  <div class="dlrow">
+    <a class="btn" href="/download/pdf">Download PDF</a>
+    <a class="btn ghost" href="/download/docx">Download DOCX</a>
+    <a class="btn ghost" href="/">Start over</a>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Resume preview</h2>
+  <p class="hint">This is the polished content we generated.</p>
+  <div class="preview">{% if resume.name %}{{ resume.name }}
+{% endif %}{% if resume.email or resume.phone %}{{ resume.email }}{% if resume.email and resume.phone %} | {% endif %}{{ resume.phone }}
+{% endif %}{% if resume.summary %}
+SUMMARY
+{{ resume.summary }}
+{% endif %}{% if resume.skills %}
+SKILLS
+{{ resume.skills | join(", ") }}
+{% endif %}{% if resume.experiences %}
+EXPERIENCE
+{% for e in resume.experiences %}{{ e.title }}{% if e.company %}, {{ e.company }}{% endif %} {{ e.start }} {% if e.end %}- {{ e.end }}{% endif %}
+{% for b in e.bullets %}- {{ b }}
+{% endfor %}{% endfor %}{% endif %}{% if resume.educations %}
+EDUCATION
+{% for ed in resume.educations %}{{ ed.degree }}{% if ed.institution %}, {{ ed.institution }}{% endif %}{% if ed.year %} ({{ ed.year }}){% endif %}
+{% endfor %}{% endif %}</div>
 </div>
 
 {% if cover %}
-<div class="card"><h2>Cover letter</h2><p style="white-space:pre-wrap">{{ cover }}</p></div>
+<div class="card"><h2>Cover letter</h2><p class="hint">Tailored to the job you pasted.</p>
+  <div class="preview">{{ cover }}</div></div>
 {% endif %}
+
+<p class="foot">ForgeCV · built by Amaan Khan</p>
 {% endblock %}
