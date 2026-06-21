@@ -104,3 +104,18 @@ textarea{resize:vertical;min-height:96px;}
   background:var(--paper-2);border-radius:12px;padding:18px;max-height:340px;overflow:auto;}
 .foot{text-align:center;color:var(--muted);font-size:12.5px;margin-top:30px;}
 .dlrow{display:flex;gap:12px;flex-wrap:wrap;}
+
+/* mode toggle */
+.modes{display:flex;gap:6px;background:var(--paper-2);padding:6px;border-radius:14px;margin-bottom:20px;}
+.mode-btn{flex:1;border:none;background:transparent;font-family:inherit;font-weight:800;
+  font-size:14px;color:var(--muted);padding:12px;border-radius:10px;cursor:pointer;transition:.15s;}
+.mode-btn.on{background:#fff;color:var(--ink);box-shadow:var(--shadow-sm);}
+
+/* sample JD chips */
+.jchips{display:flex;flex-wrap:wrap;gap:8px;margin-top:11px;}
+.jchip{border:1.5px solid var(--field);background:#fff;color:#5c5648;font-family:inherit;
+  font-weight:700;font-size:12.5px;padding:8px 14px;border-radius:999px;cursor:pointer;transition:.15s;}
+.jchip:hover{border-color:var(--accent);color:var(--accent-dark);background:var(--accent-soft);}
+
+.autofill-note{display:none;color:var(--accent-dark);font-weight:700;font-size:12.5px;margin-top:10px;}
+.autofill-note.show{display:block;}

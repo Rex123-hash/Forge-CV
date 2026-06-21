@@ -38,9 +38,13 @@ def create_app():
     @app.post("/generate")
     def generate():
         f = request.files.get("resume_file")
+        source = ""
         if f and f.filename:
-            source = parser.extract_text(f.read(), f.filename)
-        else:
+            try:
+                source = parser.extract_text(f.read(), f.filename)
+            except Exception:
+                source = ""
+        if not source.strip():
             source = _assemble_source(request.form)
 
         jd = request.form.get("job_description", "")
@@ -67,6 +71,32 @@ def create_app():
         return render_template("result.html", report=report, resume=resume,
                                cover=cover,
                                combined=report.combined(config.PARSE_WEIGHT, config.MATCH_WEIGHT))
+
+    @app.post("/parse")
+    def parse_upload():
+        """Read an uploaded resume and return fields to auto-fill the form."""
+        f = request.files.get("resume_file")
+        if not f or not f.filename:
+            return {"ok": False}, 400
+        try:
+            text = parser.extract_text(f.read(), f.filename)
+            d = groq_client.parse_resume(text)
+        except Exception:
+            d = {}
+        exp_lines = []
+        for e in (d.get("experiences") or []):
+            head = ", ".join(x for x in [e.get("title", ""), e.get("company", "")] if x)
+            if head:
+                exp_lines.append(head)
+            exp_lines += [b for b in (e.get("bullets") or []) if b]
+        return {
+            "ok": bool(d.get("name") or d.get("skills") or d.get("experiences")),
+            "name": d.get("name", ""),
+            "email": d.get("email", ""),
+            "phone": d.get("phone", ""),
+            "skills": ", ".join(d.get("skills") or []),
+            "experience": "\n".join(exp_lines),
+        }
 
     @app.get("/download/<fmt>")
     def download(fmt):

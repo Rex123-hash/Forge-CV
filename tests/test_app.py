@@ -42,6 +42,33 @@ def test_generate_returns_scores(monkeypatch):
     assert b"EDUCATION" in resp.data    # structured preview rendered
 
 
+def test_parse_autofill_returns_fields(monkeypatch):
+    from core import parser
+    monkeypatch.setattr(parser, "extract_text", lambda b, name: "resume text")
+    monkeypatch.setattr(groq_client, "parse_resume", lambda text: {
+        "name": "Amaan Khan", "email": "a@x.com", "phone": "+91",
+        "skills": ["Python", "XGBoost"],
+        "experiences": [{"title": "ML Intern", "company": "MAIT", "bullets": ["Built models"]}],
+    })
+    app = create_app()
+    client = app.test_client()
+    import io
+    data = {"resume_file": (io.BytesIO(b"dummy"), "resume.pdf")}
+    resp = client.post("/parse", data=data, content_type="multipart/form-data")
+    j = resp.get_json()
+    assert j["ok"] is True
+    assert j["name"] == "Amaan Khan"
+    assert "Python" in j["skills"]
+    assert "Built models" in j["experience"]
+
+
+def test_parse_no_file_returns_400():
+    app = create_app()
+    client = app.test_client()
+    resp = client.post("/parse", data={}, content_type="multipart/form-data")
+    assert resp.status_code == 400
+
+
 def test_download_after_generate(monkeypatch):
     monkeypatch.setattr(groq_client, "forge_resume", lambda src, jd="": _fake_forged())
     app = create_app()

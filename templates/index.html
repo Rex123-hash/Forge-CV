@@ -2,44 +2,56 @@
 {% block content %}
 <div class="hero">
   <h1 class="headline">Build a resume that <span>beats the bots</span> and lands the interview.</h1>
-  <p class="subhead">Upload your resume or fill in your details. We rewrite it, score it against the job, and export a clean ATS-ready PDF and DOCX.</p>
+  <p class="subhead">Upload your resume to auto-fill everything, or enter your details. We rewrite, tailor, score, and export a one-page ATS-ready PDF and DOCX.</p>
 </div>
 
 {% if error %}<div class="banner">{{ error }}</div>{% endif %}
 
 <form class="card" method="post" action="/generate" enctype="multipart/form-data" id="forge-form">
-  <label>Start from your existing resume</label>
-  <div class="drop" id="drop">
-    <input type="file" name="resume_file" id="resume_file" accept=".pdf,.docx">
-    <div class="ico">
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 16V4M7 9l5-5 5 5"/><path d="M5 20h14"/>
-      </svg>
+  <div class="modes">
+    <button type="button" class="mode-btn on" data-mode="upload">Upload resume</button>
+    <button type="button" class="mode-btn" data-mode="manual">Fill manually</button>
+  </div>
+
+  <div id="upload-pane">
+    <div class="drop" id="drop">
+      <input type="file" name="resume_file" id="resume_file" accept=".pdf,.docx">
+      <div class="ico">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 16V4M7 9l5-5 5 5"/><path d="M5 20h14"/>
+        </svg>
+      </div>
+      <div class="t">Drop your resume here, or click to browse</div>
+      <div class="s">PDF or DOCX · we read it and fill the fields below</div>
+      <div class="fname" id="fname"></div>
     </div>
-    <div class="t">Drop your resume here, or click to browse</div>
-    <div class="s">PDF or DOCX · we read it with AI and pre-fill everything</div>
-    <div class="fname" id="fname"></div>
+    <div class="autofill-note" id="autofill-note">Details filled from your resume — review and edit below, then generate.</div>
   </div>
 
-  <div class="or">or enter manually</div>
-
   <div class="row">
-    <div class="field"><label>Full name</label><input name="name" placeholder="Amaan Khan"></div>
-    <div class="field"><label>Email</label><input name="email" type="email" placeholder="you@example.com"></div>
+    <div class="field"><label>Full name</label><input name="name" id="f-name" placeholder="Amaan Khan"></div>
+    <div class="field"><label>Email</label><input name="email" id="f-email" type="email" placeholder="you@example.com"></div>
   </div>
   <div class="row">
-    <div class="field"><label>Phone</label><input name="phone" placeholder="+91 ..."></div>
-    <div class="field"><label>Skills (comma separated)</label><input name="skills" placeholder="Python, Flask, Docker"></div>
+    <div class="field"><label>Phone</label><input name="phone" id="f-phone" placeholder="+91 ..."></div>
+    <div class="field"><label>Skills (comma separated)</label><input name="skills" id="f-skills" placeholder="Python, Flask, Docker"></div>
   </div>
   <div class="field"><label>Experience</label>
-    <textarea name="experience" rows="4" placeholder="What you did — roles, projects, impact..."></textarea></div>
+    <textarea name="experience" id="f-experience" rows="4" placeholder="Roles, projects, impact..."></textarea></div>
+
   <div class="field"><label>Target job description</label>
-    <textarea name="job_description" rows="5" placeholder="Paste the job posting. We tailor and score against it."></textarea></div>
+    <textarea name="job_description" id="f-jd" rows="5" placeholder="Paste a job posting, or pick a sample below to tailor against."></textarea>
+    <div class="jchips" id="jd-chips">
+      <button type="button" class="jchip" data-jd="aiml">AI / ML</button>
+      <button type="button" class="jchip" data-jd="webdev">Web Dev</button>
+      <button type="button" class="jchip" data-jd="datasci">Data Science</button>
+      <button type="button" class="jchip" data-jd="swe">Software Engineer</button>
+      <button type="button" class="jchip" data-jd="cloud">Cloud / DevOps</button>
+    </div>
+  </div>
 
   <button class="btn block" type="submit" id="submit-btn">Generate &amp; score my resume</button>
-  <div class="note">
-    <span>Your details are processed only to build your resume and are not stored after the page closes.</span>
-  </div>
+  <div class="note"><span>Your details are processed only to build your resume and are not stored after the page closes.</span></div>
 </form>
 
 <p class="foot">ForgeCV · built by Amaan Khan</p>
