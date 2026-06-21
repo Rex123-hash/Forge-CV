@@ -45,11 +45,11 @@
           fname.textContent = "Loaded: " + file.name;
           if (note) note.classList.add("show");
         } else {
-          fname.textContent = "Couldn't read that file — you can still fill the fields below.";
+          fname.textContent = "Couldn't read that file - you can still fill the fields below.";
         }
       })
       .catch(function () {
-        fname.textContent = "Couldn't read that file — you can still fill the fields below.";
+        fname.textContent = "Couldn't read that file - you can still fill the fields below.";
       });
   }
 
@@ -89,12 +89,47 @@
     });
   }
 
-  // ---- loading state on submit ----
+  // ---- loading overlay on submit (with cycling messages) ----
   var form = $("forge-form");
   if (form) {
     form.addEventListener("submit", function () {
       var btn = $("submit-btn");
-      if (btn) { btn.disabled = true; btn.textContent = "Forging your resume..."; }
+      if (btn) { btn.disabled = true; btn.textContent = "Forging..."; }
+      var overlay = $("overlay"), msg = $("overlay-msg");
+      if (overlay) {
+        overlay.classList.add("show");
+        var steps = ["Reading your details...", "Rewriting your experience...",
+                     "Tailoring to the job...", "Scoring against ATS rules...",
+                     "Laying out your one-page resume..."];
+        var i = 0;
+        setInterval(function () {
+          i = (i + 1) % steps.length;
+          if (msg) msg.textContent = steps[i];
+        }, 1800);
+      }
     });
   }
+
+  // ---- frosted nav on scroll ----
+  var nav = document.querySelector(".nav");
+  if (nav) {
+    var onScroll = function () { nav.classList.toggle("scrolled", window.scrollY > 8); };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+  }
+
+  // ---- count up the score gauge numbers ----
+  var nums = document.querySelectorAll(".gauge-num");
+  nums.forEach(function (el) {
+    var target = parseInt(el.textContent, 10);
+    if (isNaN(target)) return;
+    var start = null, dur = 1000;
+    function tick(t) {
+      if (start === null) start = t;
+      var p = Math.min((t - start) / dur, 1);
+      el.textContent = Math.round(target * p);
+      if (p < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  });
 })();

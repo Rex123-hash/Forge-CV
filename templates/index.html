@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="hero">
+  <span class="eyebrow"><span class="dot"></span> Free &middot; No sign-up &middot; <b>ATS-tested</b></span>
   <h1 class="headline">Build a resume that <span>beats the bots</span> and lands the interview.</h1>
   <p class="subhead">Upload your resume to auto-fill everything, or enter your details. We rewrite, tailor, score, and export a one-page ATS-ready PDF and DOCX.</p>
 </div>
@@ -25,7 +26,7 @@
       <div class="s">PDF or DOCX · we read it and fill the fields below</div>
       <div class="fname" id="fname"></div>
     </div>
-    <div class="autofill-note" id="autofill-note">Details filled from your resume — review and edit below, then generate.</div>
+    <div class="autofill-note" id="autofill-note">Details filled from your resume - review and edit below, then generate.</div>
   </div>
 
   <div class="row">
@@ -55,4 +56,12 @@
 </form>
 
 <p class="foot">ForgeCV · built by Amaan Khan</p>
+
+<div class="overlay" id="overlay">
+  <div class="overlay-card">
+    <div class="spinner"></div>
+    <div class="overlay-title">Forging your resume</div>
+    <div class="overlay-msg" id="overlay-msg">Reading your details...</div>
+  </div>
+</div>
 {% endblock %}

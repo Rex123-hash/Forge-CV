@@ -43,6 +43,26 @@ def test_generate_returns_scores(monkeypatch):
     assert b"EDUCATION" in resp.data    # structured preview rendered
 
 
+def test_tailoring_injects_missing_skills_to_qualify(monkeypatch):
+    # resume lacks "Kubernetes"; tailoring to a job that needs it should inject it.
+    monkeypatch.setattr(groq_client, "forge_resume", lambda src, jd="": {
+        "name": "Aman", "contact": "a@x.com",
+        "sections": [{"heading": "TECHNICAL SKILLS", "body": "Languages: Python"}]})
+    monkeypatch.setattr(groq_client, "extract_job_keywords", lambda jd: ["Python", "Kubernetes"])
+    monkeypatch.setattr(groq_client, "write_cover_letter", lambda r, jd: "")
+
+    client = create_app().test_client()
+    resp = client.post("/generate", data={"name": "Aman", "job_description": "k8s role"})
+    assert resp.status_code == 200
+    assert b"Kubernetes" in resp.data       # injected into skills
+    assert b"100" in resp.data              # now fully matches
+
+
+def test_no_em_dashes_from_strip():
+    from core.groq_client import _strip
+    assert _strip("Built X — shipped Y – done") == "Built X - shipped Y - done"
+
+
 def test_parse_autofill_returns_fields(monkeypatch):
     from core import parser
     monkeypatch.setattr(parser, "extract_text", lambda b, name: "resume text")

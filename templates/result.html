@@ -2,7 +2,7 @@
 {% block content %}
 <div class="hero">
   <h1 class="headline">Your resume scored <span>{{ combined }}</span></h1>
-  <p class="subhead">{% if combined >= 99 %}Excellent — this is ATS-ready.{% elif combined >= 85 %}Strong. A few tweaks below can push it higher.{% else %}Good start — see what to improve below.{% endif %}</p>
+  <p class="subhead">{% if combined >= 99 %}Excellent - this is ATS-ready.{% elif combined >= 85 %}Strong. A few tweaks below can push it higher.{% else %}Good start - see what to improve below.{% endif %}</p>
 </div>
 
 <div class="card">
@@ -22,18 +22,18 @@
 
 <div class="card">
   <h2>Download</h2>
-  <p class="hint">Real text layer in every file — ATS-safe.</p>
+  <p class="hint">Real text layer in every file - ATS-safe.</p>
 
   <div class="dlgroup">
     <span class="dllabel">Résumé</span>
     <div class="dlrow">
       <form method="post" action="/download/resume/pdf">
         <input type="hidden" name="resume" value="{{ resume_json }}">
-        <button class="btn" type="submit">Résumé — PDF</button>
+        <button class="btn" type="submit">Résumé - PDF</button>
       </form>
       <form method="post" action="/download/resume/docx">
         <input type="hidden" name="resume" value="{{ resume_json }}">
-        <button class="btn ghost" type="submit">Résumé — DOCX</button>
+        <button class="btn ghost" type="submit">Résumé - DOCX</button>
       </form>
     </div>
   </div>
@@ -45,12 +45,12 @@
       <form method="post" action="/download/cover/pdf">
         <input type="hidden" name="cover" value="{{ cover }}">
         <input type="hidden" name="name" value="{{ resume.name }}">
-        <button class="btn" type="submit">Cover letter — PDF</button>
+        <button class="btn" type="submit">Cover letter - PDF</button>
       </form>
       <form method="post" action="/download/cover/docx">
         <input type="hidden" name="cover" value="{{ cover }}">
         <input type="hidden" name="name" value="{{ resume.name }}">
-        <button class="btn ghost" type="submit">Cover letter — DOCX</button>
+        <button class="btn ghost" type="submit">Cover letter - DOCX</button>
       </form>
     </div>
     {% else %}
@@ -84,7 +84,7 @@
 {% for s in resume.sections %}
 {{ s.heading }}
 {% if s.body %}{{ s.body }}
-{% endif %}{% for e in s.entries %}{{ e.header }}{% if e.date %}  —  {{ e.date }}{% endif %}
+{% endif %}{% for e in s.entries %}{{ e.header }}{% if e.date %}  /  {{ e.date }}{% endif %}
 {% if e.subheader %}{{ e.subheader }}
 {% endif %}{% for b in e.bullets %}• {{ b }}
 {% endfor %}{% endfor %}{% endfor %}</div>

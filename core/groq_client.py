@@ -19,7 +19,13 @@ EMOJI_RE = re.compile(
 
 
 def _strip(text: str) -> str:
-    return EMOJI_RE.sub("", text).strip()
+    """Remove emojis and normalize fancy dashes to plain hyphens (no em/en dashes)."""
+    text = EMOJI_RE.sub("", text)
+    text = (text.replace("—", "-")   # em dash
+                .replace("–", "-")   # en dash
+                .replace("―", "-")   # horizontal bar
+                .replace("−", "-"))  # minus sign
+    return text.strip()
 
 
 def _get_client():

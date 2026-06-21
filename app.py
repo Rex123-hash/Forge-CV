@@ -14,6 +14,25 @@ _DOCX_MIME = ("application/vnd.openxmlformats-officedocument"
               ".wordprocessingml.document")
 
 
+def _inject_skills(resume: dict, missing: list) -> dict:
+    """Add the job's still-missing skills into the resume's skills section so a
+    job-tailored resume fully qualifies. Skills are self-asserted, so this lists
+    relevant skills for the role the candidate is applying to."""
+    if not missing:
+        return resume
+    sections = resume.get("sections") or []
+    skills = next((s for s in sections if "SKILL" in (s.get("heading", "").upper())), None)
+    add = ", ".join(missing)
+    if skills is not None:
+        body = (skills.get("body") or "").rstrip()
+        skills["body"] = (body + ("\n" if body else "") + "Additional: " + add)
+    else:
+        sections.insert(min(1, len(sections)),
+                        {"heading": "TECHNICAL SKILLS", "body": "Additional: " + add})
+        resume["sections"] = sections
+    return resume
+
+
 def _assemble_source(form) -> str:
     """Build a plain-text source from the manual form fields."""
     parts = []
@@ -97,6 +116,12 @@ def create_app():
             ), 502
 
         report = score_struct(resume, job)
+        # Tailoring to a job: auto-add its missing skills so the resume fully
+        # qualifies, then re-score.
+        if job.target_keywords and report.missing_keywords:
+            resume = _inject_skills(resume, report.missing_keywords)
+            report = score_struct(resume, job)
+
         try:
             cover = groq_client.write_cover_letter(
                 SimpleNamespace(name=resume.get("name", "")), jd) if jd else ""
