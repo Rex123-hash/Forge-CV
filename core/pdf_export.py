@@ -1,3 +1,5 @@
+import os
+import re
 from io import BytesIO
 from xml.sax.saxutils import escape
 from reportlab.lib.pagesizes import LETTER
@@ -7,11 +9,47 @@ from reportlab.platypus import (SimpleDocTemplate, Paragraph, Spacer, Table,
                                 TableStyle, HRFlowable)
 from reportlab.lib.units import inch
 from reportlab.lib.enums import TA_CENTER, TA_RIGHT
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.pdfbase.pdfmetrics import registerFontFamily
 from core.models import ResumeData
 
 _RULE = colors.HexColor("#9a917c")
 _GREY = colors.HexColor("#444444")
+_LINK_HEX = "#1155CC"
 _AVAIL = LETTER[0] - 0.8 * inch  # 0.4in margins each side
+_FONT_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static", "fonts")
+
+# Color github/linkedin and any http(s) or domain/path link blue (not emails).
+_URL_RE = re.compile(
+    r"(https?://\S+|(?:www\.)?(?:github|linkedin)\.com/\S+|\b[\w-]+\.(?:com|io|app|dev|org|net|ai|co)/\S+)",
+    re.I)
+
+_fonts_ready = None
+
+
+def _font_set():
+    """Register Carlito (metric-compatible with Calibri) once; fall back to
+    Helvetica if the TTFs are unavailable. Returns (regular, bold, italic)."""
+    global _fonts_ready
+    if _fonts_ready is None:
+        try:
+            pdfmetrics.registerFont(TTFont("Calibri", os.path.join(_FONT_DIR, "Carlito-Regular.ttf")))
+            pdfmetrics.registerFont(TTFont("Calibri-Bold", os.path.join(_FONT_DIR, "Carlito-Bold.ttf")))
+            pdfmetrics.registerFont(TTFont("Calibri-Italic", os.path.join(_FONT_DIR, "Carlito-Italic.ttf")))
+            pdfmetrics.registerFont(TTFont("Calibri-BoldItalic", os.path.join(_FONT_DIR, "Carlito-BoldItalic.ttf")))
+            registerFontFamily("Calibri", normal="Calibri", bold="Calibri-Bold",
+                               italic="Calibri-Italic", boldItalic="Calibri-BoldItalic")
+            _fonts_ready = ("Calibri", "Calibri-Bold", "Calibri-Italic")
+        except Exception:
+            _fonts_ready = ("Helvetica", "Helvetica-Bold", "Helvetica-Oblique")
+    return _fonts_ready
+
+
+def _linkify(line: str) -> str:
+    """Escape a line and color any link tokens blue (#1155CC)."""
+    esc = escape(line)
+    return _URL_RE.sub(lambda m: f'<font color="{_LINK_HEX}">{m.group(0)}</font>', esc)
 
 
 def _bold_category(line: str) -> str:
@@ -22,36 +60,49 @@ def _bold_category(line: str) -> str:
     return escape(line)
 
 
+def _bullet(b: str, bold_lead: bool) -> str:
+    """Render a bullet; for achievements bold the label before the em dash."""
+    if bold_lead and " — " in b:
+        lead, rest = b.split(" — ", 1)
+        return f"&bull;&nbsp;<b>{escape(lead)}</b> — {escape(rest)}"
+    return "&bull;&nbsp;" + escape(b)
+
+
 def _render_pdf(d: dict, k: float) -> bytes:
     """Render the resume at scale k (fonts/spacing) for one-page fitting."""
+    reg, bold, ital = _font_set()
     buf = BytesIO()
-    doc = SimpleDocTemplate(buf, pagesize=LETTER, leftMargin=0.4 * inch,
-                            rightMargin=0.4 * inch, topMargin=0.38 * inch,
+    doc = SimpleDocTemplate(buf, pagesize=LETTER, leftMargin=0.45 * inch,
+                            rightMargin=0.45 * inch, topMargin=0.4 * inch,
                             bottomMargin=0.35 * inch, title=d.get("name", "Resume"))
     base = getSampleStyleSheet()["BodyText"]
-    name_s = ParagraphStyle("nm", parent=base, fontName="Helvetica-Bold",
-                            fontSize=18 * k, leading=21 * k, alignment=TA_CENTER, spaceAfter=2 * k)
-    contact_s = ParagraphStyle("ct", parent=base, fontSize=8.8 * k, leading=11 * k,
-                               alignment=TA_CENTER, textColor=_GREY, spaceAfter=3 * k)
-    sec_s = ParagraphStyle("sec", parent=base, fontName="Helvetica-Bold",
-                           fontSize=10.5 * k, leading=12 * k, spaceBefore=7 * k, spaceAfter=0)
-    left_s = ParagraphStyle("lf", parent=base, fontName="Helvetica-Bold",
-                            fontSize=9.8 * k, leading=11.5 * k)
-    date_s = ParagraphStyle("dt", parent=base, fontSize=9.2 * k, leading=11.5 * k,
+    base.fontName = reg
+    name_s = ParagraphStyle("nm", parent=base, fontName=bold,
+                            fontSize=22 * k, leading=25 * k, alignment=TA_CENTER, spaceAfter=2 * k)
+    contact_s = ParagraphStyle("ct", parent=base, fontName=reg, fontSize=9 * k, leading=11.5 * k,
+                               alignment=TA_CENTER, textColor=_GREY, spaceAfter=4 * k)
+    sec_s = ParagraphStyle("sec", parent=base, fontName=bold,
+                           fontSize=10.5 * k, leading=12 * k, spaceBefore=8 * k, spaceAfter=0)
+    left_s = ParagraphStyle("lf", parent=base, fontName=bold,
+                            fontSize=10 * k, leading=12 * k)
+    date_s = ParagraphStyle("dt", parent=base, fontName=reg, fontSize=8.6 * k, leading=12 * k,
                             alignment=TA_RIGHT, textColor=_GREY)
-    sub_s = ParagraphStyle("sub", parent=base, fontName="Helvetica-Oblique",
-                           fontSize=8.8 * k, leading=10.5 * k, textColor=_GREY, spaceAfter=1 * k)
-    bullet_s = ParagraphStyle("bu", parent=base, fontSize=9.2 * k, leading=11 * k,
+    sub_s = ParagraphStyle("sub", parent=base, fontName=ital,
+                           fontSize=9 * k, leading=11 * k, textColor=_GREY, spaceAfter=1 * k)
+    bullet_s = ParagraphStyle("bu", parent=base, fontName=reg, fontSize=9.5 * k, leading=11.5 * k,
                               leftIndent=11 * k, firstLineIndent=-7 * k, spaceAfter=1 * k)
-    body_s = ParagraphStyle("bd", parent=base, fontSize=9.2 * k, leading=11.5 * k, spaceAfter=0.5 * k)
+    body_s = ParagraphStyle("bd", parent=base, fontName=reg, fontSize=9.5 * k, leading=12 * k, spaceAfter=0.5 * k)
 
     flow = [Paragraph(escape(d.get("name", "")), name_s)]
     if d.get("contact"):
-        flow.append(Paragraph(escape(d["contact"]), contact_s))
+        flow.append(Paragraph(_linkify(d["contact"]), contact_s))
 
     for s in d.get("sections", []) or []:
-        if s.get("heading"):
-            flow.append(Paragraph(escape(s["heading"].upper()), sec_s))
+        heading = (s.get("heading") or "").upper()
+        is_award = ("ACHIEVEMENT" in heading or "CERTIFICATION" in heading
+                    or "AWARD" in heading)
+        if heading:
+            flow.append(Paragraph(escape(heading), sec_s))
             flow.append(HRFlowable(width="100%", thickness=0.6, color=_RULE,
                                    spaceBefore=1 * k, spaceAfter=3 * k))
         if s.get("body"):
@@ -73,10 +124,10 @@ def _render_pdf(d: dict, k: float) -> bytes:
                 ]))
                 flow.append(t)
             if e.get("subheader"):
-                flow.append(Paragraph(escape(e["subheader"]), sub_s))
+                flow.append(Paragraph(_linkify(e["subheader"]), sub_s))
             for b in e.get("bullets", []) or []:
                 if b:
-                    flow.append(Paragraph("&bull;&nbsp;" + escape(b), bullet_s))
+                    flow.append(Paragraph(_bullet(b, is_award), bullet_s))
 
     doc.build(flow)
     return buf.getvalue()

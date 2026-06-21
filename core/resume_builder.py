@@ -1,3 +1,4 @@
+import re
 from io import BytesIO
 from docx import Document
 from docx.shared import Pt, RGBColor, Inches
@@ -7,6 +8,33 @@ from docx.oxml import OxmlElement
 from core.models import ResumeData
 
 _GREY = RGBColor(0x44, 0x44, 0x44)
+_LINK = RGBColor(0x11, 0x55, 0xCC)
+_URL_RE = re.compile(
+    r"(https?://\S+|(?:www\.)?(?:github|linkedin)\.com/\S+|\b[\w-]+\.(?:com|io|app|dev|org|net|ai|co)/\S+)",
+    re.I)
+
+
+def _add_linkified(p, line, size, italic=False, color=None):
+    """Add runs to paragraph p, coloring link tokens blue (#1155CC)."""
+    pos = 0
+    for m in _URL_RE.finditer(line):
+        if m.start() > pos:
+            r = p.add_run(line[pos:m.start()])
+            r.font.size = Pt(size)
+            r.italic = italic
+            if color:
+                r.font.color.rgb = color
+        lr = p.add_run(m.group(0))
+        lr.font.size = Pt(size)
+        lr.italic = italic
+        lr.font.color.rgb = _LINK
+        pos = m.end()
+    if pos < len(line):
+        r = p.add_run(line[pos:])
+        r.font.size = Pt(size)
+        r.italic = italic
+        if color:
+            r.font.color.rgb = color
 
 
 def _heading_rule(p):
@@ -36,24 +64,24 @@ def build_docx_from_dict(d: dict) -> bytes:
     name.paragraph_format.space_after = Pt(1)
     r = name.add_run(d.get("name", ""))
     r.bold = True
-    r.font.size = Pt(18)
+    r.font.size = Pt(22)
 
     if d.get("contact"):
         c = doc.add_paragraph()
         c.alignment = WD_ALIGN_PARAGRAPH.CENTER
         c.paragraph_format.space_after = Pt(4)
-        cr = c.add_run(d["contact"])
-        cr.font.size = Pt(9)
-        cr.font.color.rgb = _GREY
+        _add_linkified(c, d["contact"], 9, color=_GREY)
 
     for s in d.get("sections", []) or []:
+        heading = (s.get("heading") or "").upper()
+        is_award = any(k in heading for k in ("ACHIEVEMENT", "CERTIFICATION", "AWARD"))
         if s.get("heading"):
             h = doc.add_paragraph()
-            h.paragraph_format.space_before = Pt(7)
+            h.paragraph_format.space_before = Pt(8)
             h.paragraph_format.space_after = Pt(2)
-            hr = h.add_run(s["heading"].upper())
+            hr = h.add_run(heading)
             hr.bold = True
-            hr.font.size = Pt(11)
+            hr.font.size = Pt(10.5)
             _heading_rule(h)
         if s.get("body"):
             for line in str(s["body"]).split("\n"):
@@ -88,14 +116,20 @@ def build_docx_from_dict(d: dict) -> bytes:
             if e.get("subheader"):
                 sp = doc.add_paragraph()
                 sp.paragraph_format.space_after = Pt(1)
-                sr = sp.add_run(e["subheader"])
-                sr.italic = True
-                sr.font.size = Pt(9)
-                sr.font.color.rgb = _GREY
+                _add_linkified(sp, e["subheader"], 9, italic=True, color=_GREY)
             for b in e.get("bullets", []) or []:
-                if b:
-                    lp = doc.add_paragraph(style="List Bullet")
-                    lp.paragraph_format.space_after = Pt(1)
+                if not b:
+                    continue
+                lp = doc.add_paragraph(style="List Bullet")
+                lp.paragraph_format.space_after = Pt(1)
+                if is_award and " — " in b:
+                    lead, rest = b.split(" — ", 1)
+                    r1 = lp.add_run(lead)
+                    r1.bold = True
+                    r1.font.size = Pt(9.5)
+                    r2 = lp.add_run(" — " + rest)
+                    r2.font.size = Pt(9.5)
+                else:
                     lr = lp.add_run(b)
                     lr.font.size = Pt(9.5)
 

@@ -58,9 +58,10 @@ def test_score_is_honest_not_force_injected(monkeypatch):
     assert b"Kubernetes" in resp.data         # shown as a missing keyword to add
 
 
-def test_no_em_dashes_from_strip():
+def test_strip_keeps_dashes_removes_emoji():
     from core.groq_client import _strip
-    assert _strip("Built X — shipped Y – done") == "Built X - shipped Y - done"
+    # Per the resume spec, em/en dashes are kept; only emojis are removed.
+    assert _strip("Top 106 — selected; Jun – Aug") == "Top 106 — selected; Jun – Aug"
 
 
 def test_parse_autofill_returns_fields(monkeypatch):

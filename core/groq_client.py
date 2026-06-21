@@ -20,13 +20,9 @@ EMOJI_RE = re.compile(
 
 
 def _strip(text: str) -> str:
-    """Remove emojis and normalize fancy dashes to plain hyphens (no em/en dashes)."""
-    text = EMOJI_RE.sub("", text)
-    text = (text.replace("—", "-")   # em dash
-                .replace("–", "-")   # en dash
-                .replace("―", "-")   # horizontal bar
-                .replace("−", "-"))  # minus sign
-    return text.strip()
+    """Remove emojis only. Em dashes (asides) and en dashes (ranges) are kept,
+    per the resume spec."""
+    return EMOJI_RE.sub("", text).strip()
 
 
 def _get_client():
@@ -183,26 +179,40 @@ def forge_resume(source_text: str, job_description: str = "") -> dict:
         '   {"heading": "WORK EXPERIENCE", "entries": [{"header": "Role", "subheader": "Company", "date": "dates", "bullets": ["..."]}]},'
         '   {"heading": "RESEARCH"/"ACHIEVEMENTS"/etc, "entries": [...]}'
         ' ]}\n'
-        "Keep EVERY real section present in the source (summary, education, skills, "
-        "research, projects, work experience, achievements/certifications). Preserve "
-        "real numbers, dates, links, and tech stacks. Strengthen bullet wording. "
-        "Skills go in 'body' with category lines; other sections use 'entries'.\n"
-        "IMPORTANT - the resume MUST fit on ONE page: summary max 2 sentences; at "
-        "most 2 bullets per project/experience entry; each bullet max ~22 words; keep "
-        "only the most relevant/impressive content; education and achievements stay "
-        "concise. Do not pad.\n"
-        "ATS RULES (follow strictly):\n"
-        "- Use standard, recognizable section headings (e.g. SUMMARY, EDUCATION, "
-        "TECHNICAL SKILLS, WORK EXPERIENCE, PROJECTS, RESEARCH, ACHIEVEMENTS).\n"
-        "- Order entries reverse-chronologically (most recent first). Keep dates in a "
-        "consistent format like 'Jun 2025 - Aug 2025' so an ATS can compute tenure.\n"
-        "- Reuse the EXACT keywords and phrases from the target job where they truthfully "
-        "apply (e.g. if the job says 'time-series forecasting', use that exact phrase).\n"
-        "- Spell out acronyms once with the abbreviation in parentheses, e.g. "
-        "'Machine Learning (ML)', 'Natural Language Processing (NLP)'.\n"
-        "- Start each bullet with a strong past-tense action verb and QUANTIFY impact "
-        "with real numbers from the source (%, counts, time saved). Never fabricate numbers.\n"
-        "- Plain text only: no tables, columns, emojis, icons, or special bullet glyphs.\n\n"
+        "Keep EVERY real section present in the source. Preserve real numbers, dates, "
+        "links, and tech stacks. Strengthen wording. Skills go in 'body' (category "
+        "lines); other sections use 'entries'.\n"
+        "SECTION ORDER (top to bottom): SUMMARY, EDUCATION, TECHNICAL SKILLS, "
+        "RESEARCH (only if there is a paper - place it above projects for ML/research "
+        "roles), RELEVANT PROJECTS, WORK EXPERIENCE, NOTABLE ACHIEVEMENTS & "
+        "CERTIFICATIONS. Use these exact heading names. Omit a section only if the "
+        "source has nothing for it.\n"
+        "SUMMARY: 3-4 lines. Formula: who you are -> what you have done -> what you are "
+        "skilled in -> what you are seeking. Mirror the target job's language. No "
+        "'passionate hardworking individual' filler.\n"
+        "TECHNICAL SKILLS: 4-5 labeled rows (one per line as 'Label: items'), NOT one "
+        "long list. Order the rows by relevance to the target job (most-wanted category "
+        "first). Give full term AND acronym, e.g. 'Building Information Modeling (BIM)'. "
+        "Only skills supported by the source.\n"
+        "RELEVANT PROJECTS: header = 'Project Name | Tech, Stack' (real stack); "
+        "subheader = the project link plus context (e.g. 'github.com/... · Hackathon'); "
+        "date = year. 2-3 bullets each, strongest project first. Bullet formula: action "
+        "verb + impact + what it is + how. Consistent voice (all start with a verb).\n"
+        "WORK EXPERIENCE: header = role; subheader = 'Company · duration' (italic); "
+        "date = 'Mon YYYY – Mon YYYY' (en dash). Quantified bullets.\n"
+        "NOTABLE ACHIEVEMENTS & CERTIFICATIONS: one bullet each, most impressive first, "
+        "formatted 'Award/title — specific detail' (space, em dash —, space, then detail).\n"
+        "IMPORTANT: the resume MUST fit ONE page: summary 3-4 lines; at most 2-3 "
+        "bullets per project, 1-2 per job; each bullet max ~24 words; keep only the most "
+        "relevant content. Do not pad.\n"
+        "RULES (follow strictly):\n"
+        "- Reverse-chronological order. Date ranges use an en dash: 'Jun 2025 – Aug 2025'.\n"
+        "- Reuse the EXACT keywords/phrases from the target job where they truthfully apply.\n"
+        "- HONESTY: never claim a selection, result, or metric you cannot support from the "
+        "source; never fabricate numbers; 'submitted' is not 'accepted' is not 'published'; "
+        "state co-author vs primary author accurately.\n"
+        "- Flawless spelling and grammar (US English). Plain text, no emojis, no markdown, "
+        "round bullets only.\n\n"
         + (f"TARGET JOB:\n{job_description.strip()}\n\n" if tailored else "")
         + f"SOURCE:\n{source_text[:9000]}"
     )
