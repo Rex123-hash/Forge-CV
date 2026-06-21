@@ -32,23 +32,16 @@
 
 <div class="card">
   <h2>Resume preview</h2>
-  <p class="hint">This is the polished content we generated.</p>
-  <div class="preview">{% if resume.name %}{{ resume.name }}
-{% endif %}{% if resume.email or resume.phone %}{{ resume.email }}{% if resume.email and resume.phone %} | {% endif %}{{ resume.phone }}
-{% endif %}{% if resume.summary %}
-SUMMARY
-{{ resume.summary }}
-{% endif %}{% if resume.skills %}
-SKILLS
-{{ resume.skills | join(", ") }}
-{% endif %}{% if resume.experiences %}
-EXPERIENCE
-{% for e in resume.experiences %}{{ e.title }}{% if e.company %}, {{ e.company }}{% endif %} {{ e.start }} {% if e.end %}- {{ e.end }}{% endif %}
-{% for b in e.bullets %}- {{ b }}
-{% endfor %}{% endfor %}{% endif %}{% if resume.educations %}
-EDUCATION
-{% for ed in resume.educations %}{{ ed.degree }}{% if ed.institution %}, {{ ed.institution }}{% endif %}{% if ed.year %} ({{ ed.year }}){% endif %}
-{% endfor %}{% endif %}</div>
+  <p class="hint">This is the polished, structured resume we generated. Download it above.</p>
+  <div class="preview">{{ resume.name }}
+{{ resume.contact }}
+{% for s in resume.sections %}
+{{ s.heading }}
+{% if s.body %}{{ s.body }}
+{% endif %}{% for e in s.entries %}{{ e.header }}{% if e.date %}  —  {{ e.date }}{% endif %}
+{% if e.subheader %}{{ e.subheader }}
+{% endif %}{% for b in e.bullets %}• {{ b }}
+{% endfor %}{% endfor %}{% endfor %}</div>
 </div>
 
 {% if cover %}

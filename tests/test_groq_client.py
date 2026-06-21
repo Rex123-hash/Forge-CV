@@ -42,6 +42,30 @@ def test_parse_resume_bad_json_returns_empty(monkeypatch):
     assert groq_client.parse_resume("some text") == {}
 
 
+def test_forge_resume_parses_json(monkeypatch):
+    client = MagicMock()
+    client.chat.completions.create.return_value = _fake_completion(
+        '{"name":"Amaan Khan","contact":"a@x.com",'
+        '"sections":[{"heading":"SUMMARY","body":"ML engineer."}]}'
+    )
+    monkeypatch.setattr(groq_client, "_get_client", lambda: client)
+
+    d = groq_client.forge_resume("raw resume text", "python job")
+    assert d["name"] == "Amaan Khan"
+    assert d["sections"][0]["heading"] == "SUMMARY"
+
+
+def test_forge_resume_retries_then_raises(monkeypatch):
+    client = MagicMock()
+    client.chat.completions.create.side_effect = RuntimeError("boom")
+    monkeypatch.setattr(groq_client, "_get_client", lambda: client)
+
+    import pytest
+    with pytest.raises(RuntimeError):
+        groq_client.forge_resume("x", "y")
+    assert client.chat.completions.create.call_count == 3  # retried
+
+
 def test_cover_letter_returns_text(monkeypatch):
     client = MagicMock()
     client.chat.completions.create.return_value = _fake_completion("Dear Hiring Manager, ...")

@@ -91,6 +91,68 @@ def parse_resume(raw_text: str) -> dict:
         return {}
 
 
+FORGE_SYSTEM = (
+    "You are an expert resume writer and ATS specialist. You produce clean, "
+    "single-column, ATS-optimized resumes. Rules: plain text only, NO emojis, "
+    "no markdown symbols. Use strong action verbs and quantified achievements. "
+    "NEVER invent employers, titles, degrees, dates, metrics, or facts that are "
+    "not in the source; you may only rephrase, tighten, and reorganize real "
+    "content. Output STRICT valid JSON only, no prose around it."
+)
+
+
+def _chat_json(system: str, user: str, attempts: int = 3) -> dict:
+    """Call the LLM expecting JSON, with retries for transient failures."""
+    last = None
+    for _ in range(attempts):
+        try:
+            resp = _get_client().chat.completions.create(
+                model=config.GROQ_MODEL,
+                messages=[
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": user},
+                ],
+                temperature=0.3,
+                response_format={"type": "json_object"},
+            )
+            return json.loads(_strip(resp.choices[0].message.content))
+        except Exception as e:  # transient network / rate / parse error
+            last = e
+    raise RuntimeError(f"Groq JSON call failed after {attempts} attempts: {last}")
+
+
+def forge_resume(source_text: str, job_description: str = "") -> dict:
+    """Turn raw source (uploaded resume text or assembled form fields) into a
+    fully structured, rewritten, ATS-optimized resume as a section-based dict.
+
+    Returns: {name, contact, sections: [{heading, body?, entries?:[
+              {header, subheader, date, bullets[]}]}]}
+    """
+    tailored = bool(job_description.strip())
+    user = (
+        "Build a professional, ATS-optimized resume as JSON from the SOURCE"
+        + (", tailored to the TARGET JOB (weave in its keywords truthfully)" if tailored else "")
+        + ". Use this exact schema:\n"
+        '{"name": "Full Name",'
+        ' "contact": "phone | email | linkedin | github (one line)",'
+        ' "sections": ['
+        '   {"heading": "SUMMARY", "body": "2-3 sentence paragraph"},'
+        '   {"heading": "TECHNICAL SKILLS", "body": "Category: items, one category per line"},'
+        '   {"heading": "EDUCATION", "entries": [{"header": "Institution", "subheader": "Degree, GPA", "date": "dates", "bullets": []}]},'
+        '   {"heading": "PROJECTS", "entries": [{"header": "Name | tech stack", "subheader": "link / context", "date": "year", "bullets": ["..."]}]},'
+        '   {"heading": "WORK EXPERIENCE", "entries": [{"header": "Role", "subheader": "Company", "date": "dates", "bullets": ["..."]}]},'
+        '   {"heading": "RESEARCH"/"ACHIEVEMENTS"/etc, "entries": [...]}'
+        ' ]}\n'
+        "Keep EVERY real section present in the source (summary, education, skills, "
+        "research, projects, work experience, achievements/certifications). Preserve "
+        "real numbers, dates, links, and tech stacks. Strengthen bullet wording. "
+        "Skills go in 'body' with category lines; other sections use 'entries'.\n\n"
+        + (f"TARGET JOB:\n{job_description.strip()}\n\n" if tailored else "")
+        + f"SOURCE:\n{source_text[:9000]}"
+    )
+    return _chat_json(FORGE_SYSTEM, user)
+
+
 def write_cover_letter(resume, job_description: str) -> str:
     prompt = (
         f"Write a concise, professional cover letter (max 250 words) for "

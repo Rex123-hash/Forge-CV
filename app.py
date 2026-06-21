@@ -1,35 +1,30 @@
-from flask import Flask, render_template, request, session, send_file
+from flask import Flask, render_template, request, send_file
 from io import BytesIO
+from types import SimpleNamespace
 import config
-from core.models import ResumeData, Experience, Education, JobSpec
+from core.models import JobSpec
 from core.keyword_extractor import extract_keywords
-from core import generator, parser, groq_client
-from core.resume_builder import build_docx
-from core.pdf_export import build_pdf
+from core import parser, groq_client
+from core.ats_scorer import score_struct
+from core.resume_builder import build_docx_from_dict
+from core.pdf_export import build_pdf_from_dict
 
 _last = {}  # in-memory last result for downloads (stateless per process)
 
 
-def _resume_from_dict(d: dict) -> ResumeData:
-    """Build a ResumeData from the LLM-parsed resume dict."""
-    exps = [
-        Experience(title=e.get("title", ""), company=e.get("company", ""),
-                   start=str(e.get("start", "")), end=str(e.get("end", "")),
-                   bullets=[b for b in (e.get("bullets") or []) if b])
-        for e in (d.get("experiences") or [])
-    ]
-    eds = [
-        Education(degree=e.get("degree", ""), institution=e.get("institution", ""),
-                  year=str(e.get("year", "")))
-        for e in (d.get("educations") or [])
-    ]
-    return ResumeData(
-        name=d.get("name", ""), email=d.get("email", ""), phone=d.get("phone", ""),
-        links=[l for l in (d.get("links") or []) if l], summary=d.get("summary", ""),
-        skills=[s for s in (d.get("skills") or []) if s],
-        experiences=exps, educations=eds,
-        projects=[p for p in (d.get("projects") or []) if p],
-    )
+def _assemble_source(form) -> str:
+    """Build a plain-text source from the manual form fields."""
+    parts = []
+    if form.get("name"):
+        parts.append(form["name"])
+    contact = " | ".join(x for x in [form.get("email", ""), form.get("phone", "")] if x)
+    if contact:
+        parts.append(contact)
+    if form.get("skills"):
+        parts.append("SKILLS\n" + form["skills"])
+    if form.get("experience"):
+        parts.append("EXPERIENCE\n" + form["experience"])
+    return "\n".join(parts)
 
 
 def create_app():
@@ -44,37 +39,27 @@ def create_app():
     def generate():
         f = request.files.get("resume_file")
         if f and f.filename:
-            text = parser.extract_text(f.read(), f.filename)
-            data = groq_client.parse_resume(text)
-            # LLM parse preferred; fall back to regex if it yields nothing usable.
-            if data and (data.get("name") or data.get("experiences") or data.get("skills")):
-                resume = _resume_from_dict(data)
-            else:
-                resume = parser.parse_text_to_resume(text)
+            source = parser.extract_text(f.read(), f.filename)
         else:
-            resume = ResumeData(
-                name=request.form.get("name", ""),
-                email=request.form.get("email", ""),
-                phone=request.form.get("phone", ""),
-                skills=[s.strip() for s in request.form.get("skills", "").split(",") if s.strip()],
-                experiences=[Experience(bullets=[request.form.get("experience", "")])],
-            )
+            source = _assemble_source(request.form)
+
         jd = request.form.get("job_description", "")
         job = JobSpec(raw=jd, target_keywords=extract_keywords(jd))
 
         try:
-            resume, report = generator.generate(resume, job)
+            # One LLM call parses, rewrites, tailors, and structures the resume.
+            resume = groq_client.forge_resume(source, jd)
         except Exception:
-            # The only network dependency is Groq; a missing/invalid key or an
-            # outage lands here. Show a friendly message instead of a 500.
             return render_template(
                 "index.html",
-                error="Could not reach the AI service. Set GROQ_API_KEY to a "
-                      "valid key from console.groq.com and try again.",
+                error="Could not reach the AI service right now. Check your "
+                      "GROQ_API_KEY (console.groq.com) and try again.",
             ), 502
 
+        report = score_struct(resume, job)
         try:
-            cover = groq_client.write_cover_letter(resume, jd) if jd else ""
+            cover = groq_client.write_cover_letter(
+                SimpleNamespace(name=resume.get("name", "")), jd) if jd else ""
         except Exception:
             cover = ""
 
@@ -89,10 +74,10 @@ def create_app():
         if not resume:
             return "No resume generated yet", 404
         if fmt == "pdf":
-            return send_file(BytesIO(build_pdf(resume)), download_name="resume.pdf",
+            return send_file(BytesIO(build_pdf_from_dict(resume)), download_name="resume.pdf",
                              mimetype="application/pdf", as_attachment=True)
         if fmt == "docx":
-            return send_file(BytesIO(build_docx(resume)), download_name="resume.docx",
+            return send_file(BytesIO(build_docx_from_dict(resume)), download_name="resume.docx",
                              mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                              as_attachment=True)
         return "Unknown format", 400

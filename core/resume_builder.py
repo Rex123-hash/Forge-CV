@@ -4,6 +4,45 @@ from docx.shared import Pt
 from core.models import ResumeData
 
 
+def build_docx_from_dict(d: dict) -> bytes:
+    """Render a section-based resume dict to an ATS-clean DOCX.
+
+    Single column, standard headings, real text, no tables/images.
+    """
+    doc = Document()
+
+    head = doc.add_paragraph()
+    run = head.add_run(d.get("name", ""))
+    run.bold = True
+    run.font.size = Pt(18)
+    if d.get("contact"):
+        doc.add_paragraph(d["contact"])
+
+    for s in d.get("sections", []) or []:
+        if s.get("heading"):
+            doc.add_heading(s["heading"].upper(), level=1)
+        if s.get("body"):
+            for line in str(s["body"]).split("\n"):
+                if line.strip():
+                    doc.add_paragraph(line.strip())
+        for e in s.get("entries", []) or []:
+            header = e.get("header", "")
+            date = e.get("date", "")
+            top = (f"{header}    {date}".strip() if date else header).strip()
+            if top:
+                p = doc.add_paragraph()
+                p.add_run(top).bold = True
+            if e.get("subheader"):
+                doc.add_paragraph(e["subheader"])
+            for b in e.get("bullets", []) or []:
+                if b:
+                    doc.add_paragraph(b, style="List Bullet")
+
+    buf = BytesIO()
+    doc.save(buf)
+    return buf.getvalue()
+
+
 def build_docx(r: ResumeData) -> bytes:
     """Single-column, standard-heading, table-free DOCX (ATS-safe)."""
     doc = Document()

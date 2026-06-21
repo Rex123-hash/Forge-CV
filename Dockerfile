@@ -10,4 +10,4 @@ COPY . .
 
 # Cloud Run provides $PORT (defaults to 8080).
 ENV PORT=8080
-CMD exec gunicorn --bind :$PORT --workers 2 --timeout 120 app:app
+CMD exec gunicorn --bind :$PORT --workers 2 --threads 4 --timeout 240 app:app
