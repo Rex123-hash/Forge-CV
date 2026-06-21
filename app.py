@@ -6,7 +6,7 @@ import config
 from core.models import JobSpec
 from core.keyword_extractor import extract_keywords
 from core import parser, groq_client
-from core.ats_scorer import score_struct
+from core.ats_scorer import score_struct, score_raw_text
 from core.resume_builder import build_docx_from_dict, build_cover_docx
 from core.pdf_export import build_pdf_from_dict, build_cover_pdf
 
@@ -106,6 +106,9 @@ def create_app():
                 keywords = [t for t, _ in extract_keywords(jd)][:14]
         job = JobSpec(raw=jd, target_keywords=[(k, 1) for k in keywords])
 
+        # Score the ORIGINAL resume first (the "before"), so we can show the lift.
+        before = score_raw_text(source, job)
+
         try:
             resume = groq_client.forge_resume(source, jd)
         except Exception:
@@ -128,12 +131,16 @@ def create_app():
         except Exception:
             cover = ""
 
+        combined = report.combined(config.PARSE_WEIGHT, config.MATCH_WEIGHT)
+        before_combined = before.combined(config.PARSE_WEIGHT, config.MATCH_WEIGHT)
+
         # Stateless: the result page carries the data so downloads work on any
         # server worker/instance (no shared in-memory state needed).
         return render_template("result.html", report=report, resume=resume,
                                resume_json=json.dumps(resume), cover=cover,
-                               combined=report.combined(config.PARSE_WEIGHT,
-                                                        config.MATCH_WEIGHT))
+                               combined=combined, before_combined=before_combined,
+                               before_parse=before.parse_score,
+                               before_match=before.match_score)
 
     @app.post("/download/<doc>/<fmt>")
     def download(doc, fmt):

@@ -5,6 +5,25 @@
   <p class="subhead">{% if combined >= 99 %}Excellent - this is ATS-ready.{% elif combined >= 85 %}Strong. A few tweaks below can push it higher.{% else %}Good start - see what to improve below.{% endif %}</p>
 </div>
 
+{% if before_combined < combined %}
+<div class="card upgrade">
+  <h2>We upgraded your resume</h2>
+  <p class="hint">Here's the lift from your original to the ForgeCV version.</p>
+  <div class="upgrade-row">
+    <div class="up-box">
+      <div class="up-num was">{{ before_combined }}</div>
+      <div class="up-lbl">Your original</div>
+    </div>
+    <svg class="up-arrow" viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    <div class="up-box">
+      <div class="up-num now">{{ combined }}</div>
+      <div class="up-lbl">With ForgeCV</div>
+    </div>
+    <div class="up-delta">+{{ combined - before_combined }} pts</div>
+  </div>
+</div>
+{% endif %}
+
 <div class="card">
   <div class="gauges">
     <div class="gauge" style="--val:{{ combined }}"><div class="gauge-in"><span class="gauge-num">{{ combined }}</span><span class="gauge-lbl">Overall</span></div></div>
