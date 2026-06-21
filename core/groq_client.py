@@ -146,7 +146,11 @@ def forge_resume(source_text: str, job_description: str = "") -> dict:
         "Keep EVERY real section present in the source (summary, education, skills, "
         "research, projects, work experience, achievements/certifications). Preserve "
         "real numbers, dates, links, and tech stacks. Strengthen bullet wording. "
-        "Skills go in 'body' with category lines; other sections use 'entries'.\n\n"
+        "Skills go in 'body' with category lines; other sections use 'entries'.\n"
+        "IMPORTANT - the resume MUST fit on ONE page: summary max 2 sentences; at "
+        "most 2 bullets per project/experience entry; each bullet max ~22 words; keep "
+        "only the most relevant/impressive content; education and achievements stay "
+        "concise. Do not pad.\n\n"
         + (f"TARGET JOB:\n{job_description.strip()}\n\n" if tailored else "")
         + f"SOURCE:\n{source_text[:9000]}"
     )

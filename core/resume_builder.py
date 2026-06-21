@@ -1,42 +1,103 @@
 from io import BytesIO
 from docx import Document
-from docx.shared import Pt
+from docx.shared import Pt, RGBColor, Inches
+from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_TAB_ALIGNMENT
+from docx.oxml.ns import qn
+from docx.oxml import OxmlElement
 from core.models import ResumeData
+
+_GREY = RGBColor(0x44, 0x44, 0x44)
+
+
+def _heading_rule(p):
+    """Add a bottom border to a paragraph (the line under a section heading)."""
+    pPr = p._p.get_or_add_pPr()
+    borders = OxmlElement("w:pBdr")
+    bottom = OxmlElement("w:bottom")
+    bottom.set(qn("w:val"), "single")
+    bottom.set(qn("w:sz"), "6")
+    bottom.set(qn("w:space"), "1")
+    bottom.set(qn("w:color"), "9A917C")
+    borders.append(bottom)
+    pPr.append(borders)
 
 
 def build_docx_from_dict(d: dict) -> bytes:
-    """Render a section-based resume dict to an ATS-clean DOCX.
-
-    Single column, standard headings, real text, no tables/images.
-    """
+    """Render a section-based resume dict to an ATS-clean DOCX matching the
+    target layout: centered name, ruled section headings, right-aligned dates
+    (via tab stops, NOT tables), single column, real text."""
     doc = Document()
+    for m in ("top", "bottom", "left", "right"):
+        setattr(doc.sections[0], f"{m}_margin", Inches(0.5))
+    right_tab = Inches(7.5)  # page width 8.5 - 1.0 margins
 
-    head = doc.add_paragraph()
-    run = head.add_run(d.get("name", ""))
-    run.bold = True
-    run.font.size = Pt(18)
+    name = doc.add_paragraph()
+    name.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    name.paragraph_format.space_after = Pt(1)
+    r = name.add_run(d.get("name", ""))
+    r.bold = True
+    r.font.size = Pt(18)
+
     if d.get("contact"):
-        doc.add_paragraph(d["contact"])
+        c = doc.add_paragraph()
+        c.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        c.paragraph_format.space_after = Pt(4)
+        cr = c.add_run(d["contact"])
+        cr.font.size = Pt(9)
+        cr.font.color.rgb = _GREY
 
     for s in d.get("sections", []) or []:
         if s.get("heading"):
-            doc.add_heading(s["heading"].upper(), level=1)
+            h = doc.add_paragraph()
+            h.paragraph_format.space_before = Pt(7)
+            h.paragraph_format.space_after = Pt(2)
+            hr = h.add_run(s["heading"].upper())
+            hr.bold = True
+            hr.font.size = Pt(11)
+            _heading_rule(h)
         if s.get("body"):
             for line in str(s["body"]).split("\n"):
-                if line.strip():
-                    doc.add_paragraph(line.strip())
+                if not line.strip():
+                    continue
+                bp = doc.add_paragraph()
+                bp.paragraph_format.space_after = Pt(1)
+                if ":" in line:
+                    cat, rest = line.split(":", 1)
+                    rb = bp.add_run(cat + ":")
+                    rb.bold = True
+                    rb.font.size = Pt(9.5)
+                    rt = bp.add_run(rest)
+                    rt.font.size = Pt(9.5)
+                else:
+                    rr = bp.add_run(line.strip())
+                    rr.font.size = Pt(9.5)
         for e in s.get("entries", []) or []:
-            header = e.get("header", "")
-            date = e.get("date", "")
-            top = (f"{header}    {date}".strip() if date else header).strip()
-            if top:
+            header, date = e.get("header", ""), e.get("date", "")
+            if header or date:
                 p = doc.add_paragraph()
-                p.add_run(top).bold = True
+                p.paragraph_format.space_before = Pt(3)
+                p.paragraph_format.space_after = Pt(0)
+                p.paragraph_format.tab_stops.add_tab_stop(right_tab, WD_TAB_ALIGNMENT.RIGHT)
+                hr = p.add_run(header)
+                hr.bold = True
+                hr.font.size = Pt(10)
+                if date:
+                    dr = p.add_run("\t" + date)
+                    dr.font.size = Pt(9.5)
+                    dr.font.color.rgb = _GREY
             if e.get("subheader"):
-                doc.add_paragraph(e["subheader"])
+                sp = doc.add_paragraph()
+                sp.paragraph_format.space_after = Pt(1)
+                sr = sp.add_run(e["subheader"])
+                sr.italic = True
+                sr.font.size = Pt(9)
+                sr.font.color.rgb = _GREY
             for b in e.get("bullets", []) or []:
                 if b:
-                    doc.add_paragraph(b, style="List Bullet")
+                    lp = doc.add_paragraph(style="List Bullet")
+                    lp.paragraph_format.space_after = Pt(1)
+                    lr = lp.add_run(b)
+                    lr.font.size = Pt(9.5)
 
     buf = BytesIO()
     doc.save(buf)
