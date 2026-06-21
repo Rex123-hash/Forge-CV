@@ -43,8 +43,8 @@ def test_generate_returns_scores(monkeypatch):
     assert b"EDUCATION" in resp.data    # structured preview rendered
 
 
-def test_tailoring_injects_missing_skills_to_qualify(monkeypatch):
-    # resume lacks "Kubernetes"; tailoring to a job that needs it should inject it.
+def test_score_is_honest_not_force_injected(monkeypatch):
+    # resume genuinely lacks "Kubernetes"; we must NOT fake-inject it to hit 100.
     monkeypatch.setattr(groq_client, "forge_resume", lambda src, jd="": {
         "name": "Aman", "contact": "a@x.com",
         "sections": [{"heading": "TECHNICAL SKILLS", "body": "Languages: Python"}]})
@@ -54,8 +54,8 @@ def test_tailoring_injects_missing_skills_to_qualify(monkeypatch):
     client = create_app().test_client()
     resp = client.post("/generate", data={"name": "Aman", "job_description": "k8s role"})
     assert resp.status_code == 200
-    assert b"Kubernetes" in resp.data       # injected into skills
-    assert b"100" in resp.data              # now fully matches
+    assert b"Additional:" not in resp.data    # no artificial keyword stuffing
+    assert b"Kubernetes" in resp.data         # shown as a missing keyword to add
 
 
 def test_no_em_dashes_from_strip():

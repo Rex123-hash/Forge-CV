@@ -7,8 +7,9 @@ _client = None
 SYSTEM_RULES = (
     "You are a professional resume writer. Rules: write concise, quantified, "
     "action-verb bullet points. Use ONLY plain text. Never use emojis, markdown "
-    "symbols, or decorative characters. Never invent jobs, employers, degrees, "
-    "or credentials the user did not provide; you may only rephrase real "
+    "symbols, or decorative characters. Use flawless spelling and grammar - "
+    "proofread every word and correct any typos. Never invent jobs, employers, "
+    "degrees, or credentials the user did not provide; you may only rephrase real "
     "experience and naturally include relevant keywords."
 )
 
@@ -43,7 +44,7 @@ def _chat(prompt: str) -> str:
             {"role": "system", "content": SYSTEM_RULES},
             {"role": "user", "content": prompt},
         ],
-        temperature=0.4,
+        temperature=0.3,
     )
     return _strip(resp.choices[0].message.content)
 
@@ -101,13 +102,16 @@ FORGE_SYSTEM = (
     "You are an expert resume writer and ATS specialist. You produce clean, "
     "single-column, ATS-optimized resumes. Rules: plain text only, NO emojis, "
     "no markdown symbols. Use strong action verbs and quantified achievements. "
+    "Use FLAWLESS spelling and grammar - proofread every word; correct any typos "
+    "from the source; use standard US English; keep technical terms, product "
+    "names and acronyms spelled correctly. "
     "NEVER invent employers, titles, degrees, dates, metrics, or facts that are "
     "not in the source; you may only rephrase, tighten, and reorganize real "
     "content. Output STRICT valid JSON only, no prose around it."
 )
 
 
-def _chat_json(system: str, user: str, attempts: int = 3) -> dict:
+def _chat_json(system: str, user: str, attempts: int = 3, temperature: float = 0.2) -> dict:
     """Call the LLM expecting JSON, with retries for transient failures."""
     last = None
     for _ in range(attempts):
@@ -118,7 +122,7 @@ def _chat_json(system: str, user: str, attempts: int = 3) -> dict:
                     {"role": "system", "content": system},
                     {"role": "user", "content": user},
                 ],
-                temperature=0.3,
+                temperature=temperature,
                 response_format={"type": "json_object"},
             )
             return json.loads(_strip(resp.choices[0].message.content))
