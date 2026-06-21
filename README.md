@@ -6,7 +6,7 @@
 
 An AI-powered, ATS-optimized resume **and** cover-letter builder. Upload your resume or fill in your details, and get a polished, one-page, recruiter-ready PDF and DOCX with a transparent ATS score.
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-ForgeCV-e35d4f?style=for-the-badge)](https://forgecv-660425204854.asia-south1.run.app)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-forgecv.web.app-e35d4f?style=for-the-badge)](https://forgecv.web.app)
 
 ![Python](https://img.shields.io/badge/Python-3.13-3776AB?logo=python&logoColor=white)
 ![Flask](https://img.shields.io/badge/Flask-3.0-000000?logo=flask&logoColor=white)
