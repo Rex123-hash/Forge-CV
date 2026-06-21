@@ -21,11 +21,44 @@
 </div>
 
 <div class="card">
-  <h2>Download your resume</h2>
-  <p class="hint">Both formats have a real text layer — ATS-safe.</p>
-  <div class="dlrow">
-    <a class="btn" href="/download/pdf">Download PDF</a>
-    <a class="btn ghost" href="/download/docx">Download DOCX</a>
+  <h2>Download</h2>
+  <p class="hint">Real text layer in every file — ATS-safe.</p>
+
+  <div class="dlgroup">
+    <span class="dllabel">Résumé</span>
+    <div class="dlrow">
+      <form method="post" action="/download/resume/pdf">
+        <input type="hidden" name="resume" value="{{ resume_json }}">
+        <button class="btn" type="submit">Résumé — PDF</button>
+      </form>
+      <form method="post" action="/download/resume/docx">
+        <input type="hidden" name="resume" value="{{ resume_json }}">
+        <button class="btn ghost" type="submit">Résumé — DOCX</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="dlgroup">
+    <span class="dllabel">Cover letter</span>
+    {% if cover %}
+    <div class="dlrow">
+      <form method="post" action="/download/cover/pdf">
+        <input type="hidden" name="cover" value="{{ cover }}">
+        <input type="hidden" name="name" value="{{ resume.name }}">
+        <button class="btn" type="submit">Cover letter — PDF</button>
+      </form>
+      <form method="post" action="/download/cover/docx">
+        <input type="hidden" name="cover" value="{{ cover }}">
+        <input type="hidden" name="name" value="{{ resume.name }}">
+        <button class="btn ghost" type="submit">Cover letter — DOCX</button>
+      </form>
+    </div>
+    {% else %}
+    <p class="hint">Add a job description on the form to get a tailored cover letter you can download here.</p>
+    {% endif %}
+  </div>
+
+  <div class="dlrow" style="margin-top:6px">
     <a class="btn ghost" href="/">Start over</a>
   </div>
 </div>

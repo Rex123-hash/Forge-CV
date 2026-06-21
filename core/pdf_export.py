@@ -82,6 +82,26 @@ def _render_pdf(d: dict, k: float) -> bytes:
     return buf.getvalue()
 
 
+def build_cover_pdf(name: str, text: str) -> bytes:
+    """Render a cover letter to a clean, ATS-safe PDF (real text layer)."""
+    buf = BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=LETTER, leftMargin=inch, rightMargin=inch,
+                            topMargin=0.9 * inch, bottomMargin=0.9 * inch,
+                            title=(name or "Cover letter"))
+    styles = getSampleStyleSheet()
+    nm = ParagraphStyle("cn", parent=styles["Title"], fontSize=15, alignment=0, spaceAfter=12)
+    body = ParagraphStyle("cb", parent=styles["BodyText"], fontSize=10.5, leading=15, spaceAfter=9)
+    flow = []
+    if name:
+        flow.append(Paragraph(escape(name), nm))
+    for para in text.split("\n\n"):
+        para = para.strip()
+        if para:
+            flow.append(Paragraph(escape(para).replace("\n", "<br/>"), body))
+    doc.build(flow)
+    return buf.getvalue()
+
+
 def _page_count(data: bytes) -> int:
     from pdfminer.pdfparser import PDFParser
     from pdfminer.pdfdocument import PDFDocument

@@ -104,6 +104,23 @@ def build_docx_from_dict(d: dict) -> bytes:
     return buf.getvalue()
 
 
+def build_cover_docx(name: str, text: str) -> bytes:
+    """Render a cover letter to a clean DOCX."""
+    doc = Document()
+    if name:
+        p = doc.add_paragraph()
+        run = p.add_run(name)
+        run.bold = True
+        run.font.size = Pt(15)
+    for para in text.split("\n\n"):
+        para = para.strip()
+        if para:
+            doc.add_paragraph(para)
+    buf = BytesIO()
+    doc.save(buf)
+    return buf.getvalue()
+
+
 def build_docx(r: ResumeData) -> bytes:
     """Single-column, standard-heading, table-free DOCX (ATS-safe)."""
     doc = Document()

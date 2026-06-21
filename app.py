@@ -1,15 +1,17 @@
-from flask import Flask, render_template, request, send_file
+import json
 from io import BytesIO
 from types import SimpleNamespace
+from flask import Flask, render_template, request, send_file
 import config
 from core.models import JobSpec
 from core.keyword_extractor import extract_keywords
 from core import parser, groq_client
 from core.ats_scorer import score_struct
-from core.resume_builder import build_docx_from_dict
-from core.pdf_export import build_pdf_from_dict
+from core.resume_builder import build_docx_from_dict, build_cover_docx
+from core.pdf_export import build_pdf_from_dict, build_cover_pdf
 
-_last = {}  # in-memory last result for downloads (stateless per process)
+_DOCX_MIME = ("application/vnd.openxmlformats-officedocument"
+              ".wordprocessingml.document")
 
 
 def _assemble_source(form) -> str:
@@ -35,42 +37,9 @@ def create_app():
     def index():
         return render_template("index.html")
 
-    @app.post("/generate")
-    def generate():
-        f = request.files.get("resume_file")
-        source = ""
-        if f and f.filename:
-            try:
-                source = parser.extract_text(f.read(), f.filename)
-            except Exception:
-                source = ""
-        if not source.strip():
-            source = _assemble_source(request.form)
-
-        jd = request.form.get("job_description", "")
-        job = JobSpec(raw=jd, target_keywords=extract_keywords(jd))
-
-        try:
-            # One LLM call parses, rewrites, tailors, and structures the resume.
-            resume = groq_client.forge_resume(source, jd)
-        except Exception:
-            return render_template(
-                "index.html",
-                error="Could not reach the AI service right now. Check your "
-                      "GROQ_API_KEY (console.groq.com) and try again.",
-            ), 502
-
-        report = score_struct(resume, job)
-        try:
-            cover = groq_client.write_cover_letter(
-                SimpleNamespace(name=resume.get("name", "")), jd) if jd else ""
-        except Exception:
-            cover = ""
-
-        _last["resume"] = resume
-        return render_template("result.html", report=report, resume=resume,
-                               cover=cover,
-                               combined=report.combined(config.PARSE_WEIGHT, config.MATCH_WEIGHT))
+    @app.get("/faq")
+    def faq():
+        return render_template("faq.html")
 
     @app.post("/parse")
     def parse_upload():
@@ -98,19 +67,75 @@ def create_app():
             "experience": "\n".join(exp_lines),
         }
 
-    @app.get("/download/<fmt>")
-    def download(fmt):
-        resume = _last.get("resume")
-        if not resume:
-            return "No resume generated yet", 404
-        if fmt == "pdf":
-            return send_file(BytesIO(build_pdf_from_dict(resume)), download_name="resume.pdf",
-                             mimetype="application/pdf", as_attachment=True)
-        if fmt == "docx":
-            return send_file(BytesIO(build_docx_from_dict(resume)), download_name="resume.docx",
-                             mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                             as_attachment=True)
-        return "Unknown format", 400
+    @app.post("/generate")
+    def generate():
+        f = request.files.get("resume_file")
+        source = ""
+        if f and f.filename:
+            try:
+                source = parser.extract_text(f.read(), f.filename)
+            except Exception:
+                source = ""
+        if not source.strip():
+            source = _assemble_source(request.form)
+
+        jd = request.form.get("job_description", "")
+        job = JobSpec(raw=jd, target_keywords=extract_keywords(jd))
+
+        try:
+            resume = groq_client.forge_resume(source, jd)
+        except Exception:
+            return render_template(
+                "index.html",
+                error="Could not reach the AI service right now. Check your "
+                      "GROQ_API_KEY (console.groq.com) and try again.",
+            ), 502
+
+        report = score_struct(resume, job)
+        try:
+            cover = groq_client.write_cover_letter(
+                SimpleNamespace(name=resume.get("name", "")), jd) if jd else ""
+        except Exception:
+            cover = ""
+
+        # Stateless: the result page carries the data so downloads work on any
+        # server worker/instance (no shared in-memory state needed).
+        return render_template("result.html", report=report, resume=resume,
+                               resume_json=json.dumps(resume), cover=cover,
+                               combined=report.combined(config.PARSE_WEIGHT,
+                                                        config.MATCH_WEIGHT))
+
+    @app.post("/download/<doc>/<fmt>")
+    def download(doc, fmt):
+        if doc == "resume":
+            try:
+                resume = json.loads(request.form.get("resume", "{}"))
+            except Exception:
+                resume = {}
+            if not resume:
+                return "Nothing to download — generate a resume first.", 400
+            if fmt == "pdf":
+                return send_file(BytesIO(build_pdf_from_dict(resume)),
+                                 download_name="resume.pdf",
+                                 mimetype="application/pdf", as_attachment=True)
+            if fmt == "docx":
+                return send_file(BytesIO(build_docx_from_dict(resume)),
+                                 download_name="resume.docx",
+                                 mimetype=_DOCX_MIME, as_attachment=True)
+        elif doc == "cover":
+            name = request.form.get("name", "")
+            text = request.form.get("cover", "")
+            if not text.strip():
+                return "No cover letter to download.", 400
+            if fmt == "pdf":
+                return send_file(BytesIO(build_cover_pdf(name, text)),
+                                 download_name="cover-letter.pdf",
+                                 mimetype="application/pdf", as_attachment=True)
+            if fmt == "docx":
+                return send_file(BytesIO(build_cover_docx(name, text)),
+                                 download_name="cover-letter.docx",
+                                 mimetype=_DOCX_MIME, as_attachment=True)
+        return "Unknown download.", 400
 
     return app
 

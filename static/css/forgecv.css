@@ -20,6 +20,9 @@ body{margin:0;color:var(--ink);line-height:1.55;
 .logo img{width:32px;height:32px;}
 .nav .pill{background:var(--accent-soft);color:var(--accent-dark);font-weight:800;
   font-size:11.5px;padding:6px 12px;border-radius:999px;letter-spacing:.02em;}
+.nav-right{display:flex;align-items:center;gap:16px;}
+.nav-link{color:var(--ink);text-decoration:none;font-weight:800;font-size:14px;}
+.nav-link:hover{color:var(--accent-dark);}
 
 .stage{max-width:760px;margin:0 auto;padding:18px 24px 80px;}
 
@@ -103,7 +106,12 @@ textarea{resize:vertical;min-height:96px;}
 .preview{white-space:pre-wrap;font-size:13.5px;color:#3a352c;line-height:1.6;
   background:var(--paper-2);border-radius:12px;padding:18px;max-height:340px;overflow:auto;}
 .foot{text-align:center;color:var(--muted);font-size:12.5px;margin-top:30px;}
-.dlrow{display:flex;gap:12px;flex-wrap:wrap;}
+.foot a{color:var(--accent-dark);}
+.dlrow{display:flex;gap:12px;flex-wrap:wrap;align-items:center;}
+.dlrow form{margin:0;}
+.dlgroup{margin-bottom:16px;}
+.dllabel{display:block;font-size:11px;font-weight:800;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:9px;}
 
 /* mode toggle */
 .modes{display:flex;gap:6px;background:var(--paper-2);padding:6px;border-radius:14px;margin-bottom:20px;}
@@ -119,6 +127,13 @@ textarea{resize:vertical;min-height:96px;}
 
 .autofill-note{display:none;color:var(--accent-dark);font-weight:700;font-size:12.5px;margin-top:10px;}
 .autofill-note.show{display:block;}
+
+/* FAQ */
+.faq h3{font-size:16px;font-weight:800;margin:22px 0 6px;letter-spacing:-.01em;}
+.faq h3:first-child{margin-top:0;}
+.faq p{margin:0 0 6px;color:#3a352c;font-size:14.5px;}
+.faq ul{margin:4px 0 6px;padding-left:20px;color:#3a352c;font-size:14px;}
+.faq li{margin:3px 0;}
 
 /* ATS checklist */
 .checks{list-style:none;margin:6px 0 0;padding:0;}

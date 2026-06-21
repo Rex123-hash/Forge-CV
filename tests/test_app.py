@@ -69,12 +69,37 @@ def test_parse_no_file_returns_400():
     assert resp.status_code == 400
 
 
-def test_download_after_generate(monkeypatch):
-    monkeypatch.setattr(groq_client, "forge_resume", lambda src, jd="": _fake_forged())
+def test_faq_renders():
+    app = create_app()
+    resp = app.test_client().get("/faq")
+    assert resp.status_code == 200
+    assert b"ATS" in resp.data
+
+
+def test_stateless_resume_download():
+    import json
     app = create_app()
     client = app.test_client()
-    client.post("/generate", data={"name": "Aman", "job_description": ""})
-    pdf = client.get("/download/pdf")
-    docx = client.get("/download/docx")
+    payload = json.dumps(_fake_forged())
+    pdf = client.post("/download/resume/pdf", data={"resume": payload})
+    docx = client.post("/download/resume/docx", data={"resume": payload})
     assert pdf.status_code == 200 and pdf.data[:4] == b"%PDF"
-    assert docx.status_code == 200 and len(docx.data) > 0
+    assert docx.status_code == 200 and len(docx.data) > 100
+
+
+def test_stateless_cover_download():
+    app = create_app()
+    client = app.test_client()
+    pdf = client.post("/download/cover/pdf",
+                      data={"cover": "Dear team,\n\nI am keen.", "name": "Aman"})
+    docx = client.post("/download/cover/docx",
+                       data={"cover": "Dear team,\n\nI am keen.", "name": "Aman"})
+    assert pdf.status_code == 200 and pdf.data[:4] == b"%PDF"
+    assert docx.status_code == 200 and len(docx.data) > 100
+
+
+def test_download_missing_data_is_400():
+    app = create_app()
+    client = app.test_client()
+    assert client.post("/download/resume/pdf", data={"resume": "{}"}).status_code == 400
+    assert client.post("/download/cover/pdf", data={"cover": ""}).status_code == 400

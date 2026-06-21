@@ -12,7 +12,10 @@
 <body>
   <nav class="nav">
     <a class="logo" href="/"><img src="{{ url_for('static', filename='img/logo.svg') }}" alt="ForgeCV"> ForgeCV</a>
-    <span class="pill">ATS-Optimized · AI</span>
+    <div class="nav-right">
+      <a class="nav-link" href="/faq">FAQ</a>
+      <span class="pill">ATS-Optimized · AI</span>
+    </div>
   </nav>
   <main class="stage">{% block content %}{% endblock %}</main>
   <script src="{{ url_for('static', filename='js/app.js') }}"></script>
