@@ -2,17 +2,16 @@
 __pycache__/
 *.py[cod]
 *.egg-info/
+.pytest_cache/
+
+# Virtual environments
 .venv/
 venv/
 env/
 
-# Secrets / env
+# Secrets / environment
 .env
 *.local
-.claude/settings.local.json
-
-# Brainstorm visual-companion artifacts
-.superpowers/
 
 # OS / editor
 .DS_Store
@@ -20,9 +19,6 @@ Thumbs.db
 .idea/
 .vscode/
 
-# Build / output artifacts
-*.pdf
-*.docx
-!docs/**/*.pdf
+# Build / generated artifacts
 dist/
 build/
