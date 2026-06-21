@@ -55,6 +55,25 @@ def test_forge_resume_parses_json(monkeypatch):
     assert d["sections"][0]["heading"] == "SUMMARY"
 
 
+def test_extract_job_keywords_cleans_and_dedupes(monkeypatch):
+    client = MagicMock()
+    client.chat.completions.create.return_value = _fake_completion(
+        '{"keywords":["Python","python","React","REST APIs",""," "]}'
+    )
+    monkeypatch.setattr(groq_client, "_get_client", lambda: client)
+
+    kws = groq_client.extract_job_keywords("build web apps with python and react")
+    assert "Python" in kws
+    assert "React" in kws
+    assert "REST APIs" in kws
+    assert kws.count("Python") == 1          # deduped case-insensitively
+    assert all(k.strip() for k in kws)        # no blanks
+
+
+def test_extract_job_keywords_empty_input():
+    assert groq_client.extract_job_keywords("") == []
+
+
 def test_forge_resume_retries_then_raises(monkeypatch):
     client = MagicMock()
     client.chat.completions.create.side_effect = RuntimeError("boom")

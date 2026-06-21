@@ -80,7 +80,12 @@ def create_app():
             source = _assemble_source(request.form)
 
         jd = request.form.get("job_description", "")
-        job = JobSpec(raw=jd, target_keywords=extract_keywords(jd))
+        keywords = []
+        if jd.strip():
+            keywords = groq_client.extract_job_keywords(jd)  # clean, real skills
+            if not keywords:  # fallback if the LLM call is unavailable
+                keywords = [t for t, _ in extract_keywords(jd)][:14]
+        job = JobSpec(raw=jd, target_keywords=[(k, 1) for k in keywords])
 
         try:
             resume = groq_client.forge_resume(source, jd)

@@ -29,6 +29,7 @@ def _fake_forged():
 def test_generate_returns_scores(monkeypatch):
     monkeypatch.setattr(groq_client, "forge_resume", lambda src, jd="": _fake_forged())
     monkeypatch.setattr(groq_client, "write_cover_letter", lambda r, jd: "Dear team,")
+    monkeypatch.setattr(groq_client, "extract_job_keywords", lambda jd: ["Python", "Flask"])
 
     app = create_app()
     client = app.test_client()

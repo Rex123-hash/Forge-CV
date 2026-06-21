@@ -121,6 +121,36 @@ def _chat_json(system: str, user: str, attempts: int = 3) -> dict:
     raise RuntimeError(f"Groq JSON call failed after {attempts} attempts: {last}")
 
 
+def extract_job_keywords(job_description: str) -> list[str]:
+    """Extract the real, concrete skills/keywords a resume should match for this
+    job — clean and properly cased (e.g. 'React', 'REST APIs', 'Machine Learning'),
+    NOT filler words like 'seeking' or 'developer'. Returns [] on failure."""
+    if not job_description.strip():
+        return []
+    user = (
+        "From this job description, list the key hard skills, tools, technologies "
+        "and concrete competencies a candidate's resume should match. Return STRICT "
+        'JSON {"keywords": ["..."]} with 8-14 items. Each item must be a real, '
+        "specific skill or technology, properly capitalized and deduplicated. Do NOT "
+        "include filler words (seeking, hiring, looking, developer, engineer, "
+        "experience, strong, responsibilities) or vague phrases.\n\n"
+        + job_description[:4000]
+    )
+    try:
+        d = _chat_json(
+            "You extract concrete resume keywords as strict JSON. Output only JSON.",
+            user)
+        out, seen = [], set()
+        for k in (d.get("keywords") or []):
+            k = str(k).strip()
+            if k and 1 < len(k) < 40 and k.lower() not in seen:
+                seen.add(k.lower())
+                out.append(k)
+        return out[:14]
+    except Exception:
+        return []
+
+
 def forge_resume(source_text: str, job_description: str = "") -> dict:
     """Turn raw source (uploaded resume text or assembled form fields) into a
     fully structured, rewritten, ATS-optimized resume as a section-based dict.

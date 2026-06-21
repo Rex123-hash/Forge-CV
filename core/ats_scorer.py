@@ -46,12 +46,14 @@ def score_struct(d: dict, job: JobSpec) -> ScoreReport:
         total = sum(w for _, w in job.target_keywords)
         covered, missing = 0, []
         for term, weight in job.target_keywords:
-            canonical = SYNONYMS.get(term, term)
-            if canonical in text or term in text:
+            t = term.lower()
+            canonical = SYNONYMS.get(t, t)
+            if canonical in text or t in text:
                 covered += weight
             else:
-                missing.append(term)
+                missing.append(term)  # keep original casing for display
         match = round(100 * covered / total) if total else 100
+        missing = missing[:8]
     else:
         match, missing = 100, []
 
