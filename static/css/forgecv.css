@@ -119,3 +119,12 @@ textarea{resize:vertical;min-height:96px;}
 
 .autofill-note{display:none;color:var(--accent-dark);font-weight:700;font-size:12.5px;margin-top:10px;}
 .autofill-note.show{display:block;}
+
+/* ATS checklist */
+.checks{list-style:none;margin:6px 0 0;padding:0;}
+.checks li{position:relative;padding:6px 0 6px 26px;font-size:13.5px;color:#3a352c;
+  border-bottom:1px solid var(--paper-2);}
+.checks li:last-child{border-bottom:none;}
+.checks li::before{content:"";position:absolute;left:2px;top:9px;width:12px;height:7px;
+  border-left:2.5px solid var(--accent);border-bottom:2.5px solid var(--accent);
+  transform:rotate(-45deg);}

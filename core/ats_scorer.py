@@ -4,6 +4,10 @@ from core.models import ResumeData, JobSpec, ScoreReport
 SYNONYMS = {
     "js": "javascript", "ts": "typescript", "py": "python",
     "postgres": "postgresql", "k8s": "kubernetes",
+    "ml": "machine learning", "ai": "artificial intelligence",
+    "nlp": "natural language processing", "dl": "deep learning",
+    "cv": "computer vision", "ci/cd": "continuous integration",
+    "gcp": "google cloud", "oop": "object oriented",
 }
 
 

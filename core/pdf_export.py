@@ -11,7 +11,7 @@ from core.models import ResumeData
 
 _RULE = colors.HexColor("#9a917c")
 _GREY = colors.HexColor("#444444")
-_AVAIL = LETTER[0] - inch  # 0.5in margins each side
+_AVAIL = LETTER[0] - 0.8 * inch  # 0.4in margins each side
 
 
 def _bold_category(line: str) -> str:
@@ -25,9 +25,9 @@ def _bold_category(line: str) -> str:
 def _render_pdf(d: dict, k: float) -> bytes:
     """Render the resume at scale k (fonts/spacing) for one-page fitting."""
     buf = BytesIO()
-    doc = SimpleDocTemplate(buf, pagesize=LETTER, leftMargin=0.5 * inch,
-                            rightMargin=0.5 * inch, topMargin=0.45 * inch,
-                            bottomMargin=0.4 * inch, title=d.get("name", "Resume"))
+    doc = SimpleDocTemplate(buf, pagesize=LETTER, leftMargin=0.4 * inch,
+                            rightMargin=0.4 * inch, topMargin=0.38 * inch,
+                            bottomMargin=0.35 * inch, title=d.get("name", "Resume"))
     base = getSampleStyleSheet()["BodyText"]
     name_s = ParagraphStyle("nm", parent=base, fontName="Helvetica-Bold",
                             fontSize=18 * k, leading=21 * k, alignment=TA_CENTER, spaceAfter=2 * k)

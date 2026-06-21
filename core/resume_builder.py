@@ -28,8 +28,8 @@ def build_docx_from_dict(d: dict) -> bytes:
     (via tab stops, NOT tables), single column, real text."""
     doc = Document()
     for m in ("top", "bottom", "left", "right"):
-        setattr(doc.sections[0], f"{m}_margin", Inches(0.5))
-    right_tab = Inches(7.5)  # page width 8.5 - 1.0 margins
+        setattr(doc.sections[0], f"{m}_margin", Inches(0.4))
+    right_tab = Inches(7.7)  # page width 8.5 - 0.8 margins
 
     name = doc.add_paragraph()
     name.alignment = WD_ALIGN_PARAGRAPH.CENTER

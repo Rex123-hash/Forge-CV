@@ -26,10 +26,20 @@ def extract_keywords(job_description: str) -> list[tuple[str, int]]:
         if tok in STOPWORDS or len(tok) < 2:
             continue
         counts[tok] += 1
+
+    # Multi-word phrases (adjacent meaningful tokens). ATS rewards exact phrase
+    # matches like "machine learning" or "time series", so surface them as targets.
+    phrases = Counter()
+    for a, b in zip(tokens, tokens[1:]):
+        if a in STOPWORDS or b in STOPWORDS or len(a) < 2 or len(b) < 2:
+            continue
+        phrases[f"{a} {b}"] += 1
+
     # Rank: known skills first (by weight), then other frequent terms.
     ranked = sorted(
         counts.items(),
         key=lambda kv: (kv[0] in KNOWN_SKILLS, kv[1]),
         reverse=True,
     )
-    return ranked
+    phrase_items = sorted(phrases.items(), key=lambda kv: kv[1], reverse=True)[:8]
+    return ranked + phrase_items
